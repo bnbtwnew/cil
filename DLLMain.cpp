@@ -345,7 +345,10 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
         for (int counter = validFromColumn; counter < validToColumn; counter++)
         {
             int columnCounter = counter; // Local variable for [ebp - 0C]
-            printf("====> Starting AnFullToSection at (column x row) = (%d, %d)\n", columnCounter, rowCounter);
+            // printf("====> Starting AnFullToSection at (column x row) = (%d, %d)\n", columnCounter, rowCounter);
+            int call_0x658D38_ResultBeforeDecrease = 0;
+            int call_0x658D38_ResultWithInput_ecx_0xA4 = 0;
+            int call_0x658D38_ResultWithInput_ecx_0x98 = 0;
             __asm
             {        
                 ; mov eax, dword ptr[ebp - 8]           ; 006ED85E        mov         eax, dword ptr[ebp - 8]
@@ -372,6 +375,10 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
                 mov eax, columnCounter                  ; 006ED88F        mov         eax, dword ptr[ebp - 0C]
                 call _0x00658D38WithASLR                ; 006ED892        call        00658D38
 
+                ; this line is for debugging purpose. After running the possible output is 1 or 0
+                ; 1 means this tile has item, 0 otherwise :D
+                mov call_0x658D38_ResultBeforeDecrease, eax 
+
                 dec eax                                 ; 006ED897        dec         eax
                 jne LBL_006ED8DA                        ; 006ED898 > jne         006ED8C8
 
@@ -380,11 +387,15 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
                 mov eax, columnCounter                  ; 006ED8A2        mov         eax, dword ptr[ebp - 0C]
                 call _0x00658D38WithASLR                ; 006ED8A5        call        00658D38
                 push eax                                ; 006ED8AA        push        eax
+                ; this line is for debugging purpose
+                mov call_0x658D38_ResultWithInput_ecx_0xA4, eax
 
                 mov ecx, 0x98                           ; 006ED8AB        mov         ecx, 98
                 mov edx, rowCounter                     ; 006ED8B0        mov         edx, dword ptr[ebp - 10]
                 mov eax, columnCounter                  ; 006ED8B3        mov         eax, dword ptr[ebp - 0C]
                 call _0x00658D38WithASLR                ; 006ED8B6        call        00658D38
+                ; this line is for debugging purpose
+                mov call_0x658D38_ResultWithInput_ecx_0x98, eax
 
                 mov ecx, eax                            ; 006ED8BB        mov         ecx, eax
                 mov edx, rowCounter                     ; 006ED8BD        mov         edx, dword ptr[ebp - 10]
@@ -394,8 +405,13 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
                 mov eax, eax; 006ED8DA        mov         eax, dword ptr[ebp - 8]
             }          
 
-            printf("<==== Done AnFullToSection at (column x row) = (%d, %d)\n\n", columnCounter, rowCounter);
-         
+            //printf("<==== Done AnFullToSection at (column x row) = (%d, %d) call_0x658D38_ResultBeforeDecrease = %d call_0x658D38_ResultWithInput_ecx_0xA4 = %d call_0x658D38_ResultWithInput_ecx_0x98 = %d\n\n", columnCounter, rowCounter, call_0x658D38_ResultBeforeDecrease, call_0x658D38_ResultWithInput_ecx_0xA4, call_0x658D38_ResultWithInput_ecx_0x98);
+            if (call_0x658D38_ResultBeforeDecrease == 1) { // has item  at this tile
+                // this log to print out items collected on the map, based on the result and compare with items displaying on the map
+                // we can deduce call_0x658D38_ResultWithInput_ecx_0xA4 is the ITEM_ID
+                // 0: Balloon, 124: Needle, 54: Broze coins bag, 55: Silver coin bag, 5: Max water, 12: Water, 2: Shoe, 36: Turtle, 35: Owl, 34: UFO, 119: Red face, 212: Eggs basket, 4: Glove
+                printf("<==== Collected item AnFullToSection at (column x row) = (%d, %d) call_0x658D38_ResultBeforeDecrease = %d call_0x658D38_ResultWithInput_ecx_0xA4 = %d call_0x658D38_ResultWithInput_ecx_0x98 = %d\n\n", columnCounter, rowCounter, call_0x658D38_ResultBeforeDecrease, call_0x658D38_ResultWithInput_ecx_0xA4, call_0x658D38_ResultWithInput_ecx_0x98);
+            }
         }
     }
 
