@@ -1,37 +1,17 @@
 #pragma warning( disable : 6031 )
 #include "DLLMain.h"
+//#include "Common.h"
+//#include "InGameCollectItem.h"
 //#include <detours.h>
 #include <tchar.h>
-#include <iostream>
+//#include <iostream>
+//#include <fstream>
+//#include <io.h>
+//#include <fcntl.h>
 using namespace std;
 
-enum ChucNangCheckboxTabOrder
-{
-    CHECKBOX_CHUOT_BONG = 0,
-    CHECKBOX_GIET_LEO = 1,
-    CHECKBOX_DA_BONG = 2,
-    CHECKBOX_HOI_SINH = 3,
-    CHECKBOX_GIET_TRUM = 4, // chk7
-    CHECKBOX_BONG_NUOC = 5,
-    CHECKBOX_KHOA_TOC_DO = 6,
-    CHECKBOX_AN_BUI_CAY = 7,
-    CHECKBOX_RADAR = 8,
-    CHECKBOX_CHUOT_NHAN_VAT = 9,
-    CHECKBOX_GIAI_DOC = 10,
-    CHECKBOX_MAT_NA = 12, // chk3
-    CHECKBOX_BOOM_FULL_MAP = 13,
-    CHECKBOX_THAU_KINH = 14, // chk5
-    CHECKBOX_FULL_BONG = 15,
-    CHECKBOX_XUYEN_TUONG = 16
-};
-
-enum Direction {
-    TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
-};
-
-int MAX_GAME_MAP_COLUMN = 15; // 0xF
-int MAX_GAME_MAP_ROW = 13; // 0xD
-
+//VOID myPrintf(const char* const Format, Args ... args)
+//VOID myPrintf(const char* formattedString);
 int AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity);
 VOID AddBundleItems();
 VOID TriggerAnFull();
@@ -39,17 +19,65 @@ VOID TriggerStartGame();
 VOID TriggerButton1Click();
 VOID ToggleCheckbox(int tabOrder, byte value);
 VOID ToggleOnOffCheckbox(ChucNangCheckboxTabOrder tabOrder);
-VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow);
-VOID AnFullAtDirection(Direction direction);
 
+std::string string_format(const std::string fmt_str, ...) {
+    int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+    std::unique_ptr<char[]> formatted;
+    va_list ap;
+    while (1) {
+        formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+        strcpy(&formatted[0], fmt_str.c_str());
+        va_start(ap, fmt_str);
+        final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
+        va_end(ap);
+        if (final_n < 0 || final_n >= n)
+            n += abs(final_n - n + 1);
+        else
+            break;
+    }
+    return std::string(formatted.get());
+}
+
+VOID myPrintf(string formattedString) {
+    //va_list _ArgList;
+    //printf(formattedString);
+     // string_format(Format, string_format);
+    ofstream logFile("my_log.txt", std::ios_base::app);
+    logFile << formattedString;
+    logFile.close();
+    
+}
+
+int escapeKeyPressCounter = 0;
+BOOL escapseKeyReleased = false;
 VOID InitialiseKeyShortcuts(PVOID lpParameter) {
+    // Sleep 3 seconds to wait for target module dll loaded
+    Sleep(3000);
+
+    int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
+    
+    printf("InitialiseKeyShortcuts %s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    myPrintf(string_format("InitialiseKeyShortcuts %s base = %x\n", TARGET_MODULE_DLL, dllBase));
+
+    int aslrOffset = dllBase - 0x400000;
+
     while (true)
     {
-        /*if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(VK_UP) & 0x8000) {*/
+        // if we use (GetAsyncKeyState(VK_ESCAPE) & 0x8000) alone, it will trigger many times during key pressing that 
+        // might cause app crashing, hence we handle like this to only call once when key release
         if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
-            TriggerAnFull();
+            escapseKeyReleased = true;            
         }
-        else if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x31) & 0x8000) { // Shift 1
+        else {
+            if (escapseKeyReleased) {
+                escapeKeyPressCounter++;
+                myPrintf(string_format("InitialiseKeyShortcuts Escape key press counter %d\n", escapeKeyPressCounter));
+                CollectFavouriteInGameItems(aslrOffset);
+                escapseKeyReleased = false;
+            }            
+        }
+        
+        if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x31) & 0x8000) { // Shift 1
             AddBundleItems();
         }
         else if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x32) & 0x8000) { // Shift 2
@@ -58,20 +86,23 @@ VOID InitialiseKeyShortcuts(PVOID lpParameter) {
         else if (GetAsyncKeyState(VK_LCONTROL) & GetAsyncKeyState('A') & 0x8000) { // Left Ctrl A
             ToggleOnOffCheckbox(CHECKBOX_THAU_KINH);
         }
+        /*
         else if (GetAsyncKeyState(VK_INSERT) & 0x8000) { // INSERT
-            AnFullAtDirection(TOP_LEFT);
+            AnFullAtDirection(aslrOffset, TOP_LEFT);
         }
         else if (GetAsyncKeyState(VK_HOME) & 0x8000) { // HOME
-            AnFullAtDirection(TOP_RIGHT);
+            AnFullAtDirection(aslrOffset, TOP_RIGHT);
         }
         else if (GetAsyncKeyState(VK_DELETE) & 0x8000) { // DELETE
-            AnFullAtDirection(BOTTOM_LEFT);
+            AnFullAtDirection(aslrOffset, BOTTOM_LEFT);
         }
         else if (GetAsyncKeyState(VK_END) & 0x8000) { // END
-            AnFullAtDirection(BOTTOM_RIGHT);
+            AnFullAtDirection(aslrOffset, BOTTOM_RIGHT);
         }
+        */
 
-        Sleep(1);
+        // might adjust this sleep milliseconds lower or higher and observe the situation
+        Sleep(50);
     }
 
     
@@ -79,6 +110,13 @@ VOID InitialiseKeyShortcuts(PVOID lpParameter) {
 
 VOID InitialiseConsoleForDebugging(PVOID lpParameter)
 {
+    // Sleep 3 seconds to wait for target module dll loaded
+    Sleep(3000);
+
+    int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
+    printf("%s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    int aslrOffset = dllBase - 0x400000;
+
     // Working fine
     //DWORD itemID = 0;
     //DWORD firstArg = 0;
@@ -122,11 +160,10 @@ VOID InitialiseConsoleForDebugging(PVOID lpParameter)
         cout << "\t3. Trigger Start Game\n";
         cout << "\t4. Toggle Radar\n";
         cout << "\t5. Toggle Checkbox\n";
-        cout << "\t6. An Full at as section\n";
-        cout << "\t7. An Full TOP_LEFT\n";
-        cout << "\t8. An Full TOP_RIGHT\n";
-        cout << "\t9. An Full BOTTOM_LEFT\n";
-        cout << "\t10. An Full BOTTOM_RIGHT\n";
+        cout << "\t6. An Full TOP_LEFT\n";
+        cout << "\t7. An Full TOP_RIGHT\n";
+        cout << "\t8. An Full BOTTOM_LEFT\n";
+        cout << "\t9. An Full BOTTOM_RIGHT\n";
         cout << "\t0. Exit\n";
         cout << "\n";
         cout << "Enter option: ";
@@ -164,27 +201,22 @@ VOID InitialiseConsoleForDebugging(PVOID lpParameter)
         }
         case 6:
         {
-            AnFullToSection(0, 8, 0, 7);
+            AnFullAtDirection(aslrOffset, TOP_LEFT);
             break;
         }
         case 7:
         {
-            AnFullAtDirection(TOP_LEFT);
+            AnFullAtDirection(aslrOffset, TOP_RIGHT);
             break;
         }
         case 8:
         {
-            AnFullAtDirection(TOP_RIGHT);
+            AnFullAtDirection(aslrOffset, BOTTOM_LEFT);
             break;
         }
         case 9:
         {
-            AnFullAtDirection(BOTTOM_LEFT);
-            break;
-        }
-        case 10:
-        {
-            AnFullAtDirection(BOTTOM_RIGHT);
+            AnFullAtDirection(aslrOffset, BOTTOM_RIGHT);
             break;
         }
         default:
@@ -199,7 +231,7 @@ VOID InitialiseConsoleForDebugging(PVOID lpParameter)
     return;
 }
 
-VOID AddBundleItems() {
+VOID AddBundleItems() {    
     int itemIds [] = {
         // these items has the clock icon
         89997, // khien tu dong
@@ -252,7 +284,12 @@ VOID TriggerAnFull() {
 /*
 This method we support to eat all items either in section TOP_LEFT/TOP_RIGHT/BOTTOM_LEFT/BOTTOM_RIGHT
 */
-VOID AnFullAtDirection(Direction direction) {
+VOID AnFullAtDirection(int targetDllASLR, Direction direction) {
+    /*int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
+    printf("AnFullAtDirection %s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    int aslrOffset = dllBase - 0x400000;
+    targetDllASLR = aslrOffset;*/
+
     int fromColumn = 0;
     int toColumn = 0;
     int fromRow = 0;
@@ -263,11 +300,11 @@ VOID AnFullAtDirection(Direction direction) {
     {
         fromColumn = 0;
         toColumn = MAX_GAME_MAP_COLUMN / 2 + 1;
-        
+
         fromRow = 0;
         toRow = MAX_GAME_MAP_ROW / 2 + 1;
         break;
-    }         
+    }
     case TOP_RIGHT:
     {
         fromColumn = MAX_GAME_MAP_COLUMN / 2;
@@ -276,34 +313,221 @@ VOID AnFullAtDirection(Direction direction) {
         fromRow = 0;
         toRow = MAX_GAME_MAP_ROW / 2;
         break;
-    }   
-    case BOTTOM_LEFT:    
+    }
+    case BOTTOM_LEFT:
     {
         fromColumn = 0;
         toColumn = MAX_GAME_MAP_COLUMN / 2 + 1;
-        
+
         fromRow = MAX_GAME_MAP_ROW / 2;
         toRow = MAX_GAME_MAP_ROW;
         break;
     }
-    case BOTTOM_RIGHT:    
+    case BOTTOM_RIGHT:
     {
         fromColumn = MAX_GAME_MAP_COLUMN / 2;
         toColumn = MAX_GAME_MAP_COLUMN;
-        
+
         fromRow = MAX_GAME_MAP_ROW / 2;
         toRow = MAX_GAME_MAP_ROW;
         break;
-    }    
+    }
     default:
         break;
     }
 
     printf("AnFullAtDirection fromColumn = %d toColumn = %d fromRow = %d toRow = %d\n", fromColumn, toColumn, fromRow, toRow);
-    AnFullToSection(fromColumn, toColumn, fromRow, toRow);
+    myPrintf(string_format("AnFullAtDirection fromColumn = %d toColumn = %d fromRow = %d toRow = %d\n", fromColumn, toColumn, fromRow, toRow));
+    //AnFullToSection(fromColumn, toColumn, fromRow, toRow);
+    CollectAllItemsFromRange(targetDllASLR, fromColumn, toColumn, fromRow, toRow);
+}
+
+BOOL HasItemAtTile(int targetDllASLR, int column, int row) {
+    int hasItem = 0;
+    int _0x00658D38WithASLR = targetDllASLR + 0x00658D38;
+
+    //printf("Before HasItemAtTile invoke function pointer with base %x\n", targetDllASLR);
+    //hasItem = ((int (*)(int, int, int))_0x00658D38WithASLR)(column, row, 0x1C);
+
+    __asm
+    {
+    LBL_006ED887:
+        mov ecx, 0x1C; 006ED887        mov         ecx, 1C
+            mov edx, row; 006ED88C        mov         edx, dword ptr[ebp - 10]
+            mov eax, column; 006ED88F        mov         eax, dword ptr[ebp - 0C]
+            call _0x00658D38WithASLR; 006ED892        call        00658D38
+
+            ; this line is for debugging purpose.After running the possible output is 1 or 0
+            ; 1 means this tile has item, 0 otherwise :D
+            mov hasItem, eax
+    }
+
+    //printf("After HasItemAtTile invoke function pointer\n");
+
+    return hasItem == 1;
+}
+
+int GetItemID(int targetDllASLR, int column, int row) {
+    int mapItemID = 0;
+    int _0x00658D38WithASLR = targetDllASLR + 0x00658D38;
+    __asm {
+        mov ecx, 0xA4; 006ED89A        mov         ecx, 0A4
+        mov edx, row; 006ED89F        mov         edx, dword ptr[ebp - 10]
+        mov eax, column; 006ED8A2        mov         eax, dword ptr[ebp - 0C]
+        call _0x00658D38WithASLR; 006ED8A5        call        00658D38
+        push eax; 006ED8AA        push        eax
+        ; this line is for debugging purpose
+        mov mapItemID, eax
+    }
+
+    return mapItemID;
+}
+
+int GetMysteriousNumber(int targetDllASLR, int column, int row, int itemID) {
+    int mysteriousNumber = 0;
+    int _0x00658D38WithASLR = targetDllASLR + 0x00658D38;
+    __asm {
+        mov eax, itemID
+        push eax; 006ED8AA        push        eax
+        mov ecx, 0x98; 006ED8AB        mov         ecx, 98
+        mov edx, row; 006ED8B0        mov         edx, dword ptr[ebp - 10]
+        mov eax, column; 006ED8B3        mov         eax, dword ptr[ebp - 0C]
+        call _0x00658D38WithASLR; 006ED8B6        call        00658D38
+        ; this line is for debugging purpose
+        mov mysteriousNumber, eax
+    }
+
+    return mysteriousNumber;
+}
+
+VOID CollectItemAtTile(int targetDllASLR, int column, int row) {
+    int _0x0065ADD0WithASLR = targetDllASLR + 0x0065ADD0;
+
+    try {
+        BOOL hasItem = HasItemAtTile(targetDllASLR, column, row);
+        //printf("HasItemAtTile (%d, %d) = %d\n", column, row, hasItem);
+        if (!hasItem) {
+            return;
+        }
+
+        int itemID = GetItemID(targetDllASLR, column, row);
+        //printf("GetItemID (%d, %d) = %d\n", column, row, itemID);
+        int mysteriousNumber = GetMysteriousNumber(targetDllASLR, column, row, itemID);
+        //printf("GetMysteriousNumber (%d, %d) = %d\n", column, row, mysteriousNumber);
+
+        // this asm block  will collect the item
+        __asm {
+            mov eax, itemID
+            push eax
+            mov eax, mysteriousNumber
+            mov ecx, eax; 006ED8BB        mov         ecx, eax
+            mov edx, row; 006ED8BD        mov         edx, dword ptr[ebp - 10]
+            mov eax, column; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
+            call _0x0065ADD0WithASLR; 006ED8C3        call        0065ADD0
+        }
+        printf("(%d, %d) Found ItemID %d with mysteriousNumber %d\n", column, row, itemID, mysteriousNumber);
+    }
+    catch (...) {
+        printf("CollectItemAtTile (%d, %d) failed with exception!!!\n", column, row);
+    }
+}
+
+VOID CollectItemAtTile(int targetDllASLR, int column, int row, int itemID, int mysteriousNumber) {
+    int _0x0065ADD0WithASLR = targetDllASLR + 0x0065ADD0;
+
+    try {       
+        // this asm block  will collect the item
+        __asm {
+            mov eax, itemID
+            push eax
+            mov eax, mysteriousNumber
+            mov ecx, eax; 006ED8BB        mov         ecx, eax
+            mov edx, row; 006ED8BD        mov         edx, dword ptr[ebp - 10]
+            mov eax, column; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
+            call _0x0065ADD0WithASLR; 006ED8C3        call        0065ADD0
+        }
+        printf("CollectItemAtTile (%d, %d) Found ItemID %d with mysteriousNumber %d\n", column, row, itemID, mysteriousNumber);
+        myPrintf(string_format("CollectItemAtTile (%d, %d) Found ItemID %d with mysteriousNumber %d\n", column, row, itemID, mysteriousNumber));
+    }
+    catch (...) {
+        printf("CollectItemAtTile (%d, %d) failed with exception!!!\n", column, row);
+        myPrintf(string_format("CollectItemAtTile (%d, %d) failed with exception!!!\n", column, row));
+    }
+}
+
+VOID CollectAllItemsFromRange(int targetDllASLR, int fromColumn, int toColumn, int fromRow, int toRow) {
+    int validFromColumn = fromColumn < MAX_GAME_MAP_COLUMN ? fromColumn : 0;
+    int validToColumn = toColumn <= MAX_GAME_MAP_COLUMN ? toColumn : 0;
+
+    // validate input 0 < fromRow, toRow < MAX_GAME_MAP_ROW
+    int validFromRow = fromRow < MAX_GAME_MAP_ROW ? fromRow : 0;
+    int validToRow = toRow <= MAX_GAME_MAP_ROW ? toRow : 0;
+
+    int rowCounter = validFromRow; // Local variable for [ebp - 10]   
+    for (; rowCounter < validToRow; rowCounter++)
+    {
+        for (int counter = validFromColumn; counter < validToColumn; counter++)
+        {
+            int columnCounter = counter; // Local variable for [ebp - 0C]
+            CollectItemAtTile(targetDllASLR, columnCounter, rowCounter);
+        }
+    }
+    printf("\n\n");
+}
+
+BOOL isCollectFavouriteInGameItemsDone = true;
+VOID CollectFavouriteInGameItems(int targetDllASLR) {
+    if (!isCollectFavouriteInGameItemsDone) {
+        myPrintf("!!!!!CollectFavouriteInGameItems is still in progress, no more proceeding until it's done!!!");
+        return;
+    }
+    isCollectFavouriteInGameItemsDone = false;
+    int REMOVED_ITEM_ID = -1;
+    int favoriteItems[] = { IN_GAME_ITEM_MAX_WATER, IN_GAME_ITEM_NEEDLE };
+    int totalItems = sizeof(favoriteItems) / sizeof(favoriteItems[0]);
+    int counter = 0;    
+
+    try {
+        for (int row = 0; row < MAX_GAME_MAP_ROW; row++)
+        {
+            for (int column = 0; column < MAX_GAME_MAP_COLUMN; column++)
+            {
+                if (!HasItemAtTile(targetDllASLR, column, row)) {
+                    myPrintf(string_format("CollectFavouriteInGameItems HasItemAtTile (%d, %d) is false\n", column, row));                    
+                    continue;
+                }
+                int currentItemID = GetItemID(targetDllASLR, column, row);
+                for (int i = 0; i < totalItems; i++) {
+                    if (currentItemID == favoriteItems[i]) {
+                        printf("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row);
+                        myPrintf(string_format("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row));
+                        //CollectItemAtTile(targetDllASLR, column, row);
+                        int mysteriousNumber = GetMysteriousNumber(targetDllASLR, column, row, currentItemID);
+                        myPrintf(string_format("CollectFavouriteInGameItems mysteriousNumber %d at (%d, %d)\n", mysteriousNumber, column, row));
+
+                        CollectItemAtTile(targetDllASLR, column, row, currentItemID, mysteriousNumber);
+
+                        // we only want to collect one, not all item of the same kind, hence set invalid item id to not collect again
+                        favoriteItems[i] = REMOVED_ITEM_ID;
+                        myPrintf(string_format("CollectFavouriteInGameItems removed ItemID %d from favorites!\n", favoriteItems[i]));
+                    }
+                }
+
+                myPrintf(string_format("CollectFavouriteInGameItems at (%d, %d) currentItemID %d counter = %d\n", column, row, currentItemID, counter++));
+
+            }
+        }
+    }
+    catch (...) {
+        printf("CollectFavouriteInGameItems exception!!!\n");
+    }
+
+    isCollectFavouriteInGameItemsDone = true;
+    printf("\n\n");
 }
 
 const char format_string[] = "counter1=%d counter2=%d\n";
+
 VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
     int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
     printf("%s base = %x\n", TARGET_MODULE_DLL, dllBase);
@@ -319,7 +543,7 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
     int triggerAnFullBtnAddress = *ptr1;
     int currentHoldingValue = *ptr2;
 
-    
+
 
     // validate input 0 < fromColumn, toColumn < MAX_GAME_MAP_COLUMN
     int validFromColumn = fromColumn < MAX_GAME_MAP_COLUMN ? fromColumn : 0;
@@ -331,11 +555,11 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
 
     printf("AnFullToSection fromColumn = %d toColumn = %d fromRow = %d toRow = %d\n", validFromColumn, validToColumn, validFromRow, validToRow);
 
-    
+
     int rowCounter = validFromRow; // Local variable for [ebp - 10]    
 
     // set current holding value to 1 to trigger An Full logic
-    *ptr2 = 2;
+    //*ptr2 = 2;
 
     // TODO: below inline __asm seems not correct, suppose to have 2 for loops but due to my mistake, it somehow
     // only contain 1 for loop, need to fix this by doing manualy 2 for loop in c++ and manually call
@@ -350,66 +574,66 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
             int call_0x658D38_ResultWithInput_ecx_0xA4 = 0;
             int call_0x658D38_ResultWithInput_ecx_0x98 = 0;
             __asm
-            {        
-                ; mov eax, dword ptr[ebp - 8]           ; 006ED85E        mov         eax, dword ptr[ebp - 8]
-                ; mov eax, dword ptr[eax + 0x4BC]       ; 006ED861        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton
-                ; cmp currentHoldingValue, 1              ; 006ED867        cmp         dword ptr[eax + 0C], 1; TAdvGlowButton.FTag:NativeInt
-                ; jne LBL_006ED8DA                        ; 006ED86B > jne         006ED8DA
+            {
+                ; mov eax, dword ptr[ebp - 8]; 006ED85E        mov         eax, dword ptr[ebp - 8]
+                ; mov eax, dword ptr[eax + 0x4BC]; 006ED861        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton
+                ; cmp currentHoldingValue, 1; 006ED867        cmp         dword ptr[eax + 0C], 1; TAdvGlowButton.FTag:NativeInt
+                ; jne LBL_006ED8DA; 006ED86B > jne         006ED8DA
 
-                ; mov eax, dword ptr[ebp - 8]           ; 006ED86D        mov         eax, dword ptr[ebp - 8]        
-                ; mov eax, dword ptr[eax + 0x4BC]       ; 006ED870        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton        
-                ; mov dword ptr[triggerAnFullBtnAddress + 0x0C], 2    ; 006ED876        mov         dword ptr[eax + 0C], 2; TAdvGlowButton.FTag:NativeInt
+                ; mov eax, dword ptr[ebp - 8]; 006ED86D        mov         eax, dword ptr[ebp - 8]
+                ; mov eax, dword ptr[eax + 0x4BC]; 006ED870        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton
+                ; mov dword ptr[triggerAnFullBtnAddress + 0x0C], 2; 006ED876        mov         dword ptr[eax + 0C], 2; TAdvGlowButton.FTag:NativeInt
 
-                ; xor eax, eax                            ; 006ED87D        xor eax, eax        
+                ; xor eax, eax; 006ED87D xor eax, eax
                 ; mov eax, rowCounter
-                ; mov rowCounter, eax                     ; 006ED87F        mov         dword ptr[ebp - 10], eax
+                ; mov rowCounter, eax; 006ED87F        mov         dword ptr[ebp - 10], eax
 
-            ; LBL_006ED882:
-                ; xor eax, eax                            ; 006ED882 xor eax, eax
-                ; mov eax, columnCounter
-                ; mov columnCounter, eax                  ; 006ED884        mov         dword ptr[ebp - 0C], eax
+                ; LBL_006ED882:
+                ; xor eax, eax; 006ED882 xor eax, eax
+                    ; mov eax, columnCounter
+                    ; mov columnCounter, eax; 006ED884        mov         dword ptr[ebp - 0C], eax
 
-            LBL_006ED887:        
-                mov ecx, 0x1C                           ; 006ED887        mov         ecx, 1C
-                mov edx, rowCounter                     ; 006ED88C        mov         edx, dword ptr[ebp - 10]
-                mov eax, columnCounter                  ; 006ED88F        mov         eax, dword ptr[ebp - 0C]
-                call _0x00658D38WithASLR                ; 006ED892        call        00658D38
+                    LBL_006ED887 :
+                mov ecx, 0x1C; 006ED887        mov         ecx, 1C
+                    mov edx, rowCounter; 006ED88C        mov         edx, dword ptr[ebp - 10]
+                    mov eax, columnCounter; 006ED88F        mov         eax, dword ptr[ebp - 0C]
+                    call _0x00658D38WithASLR; 006ED892        call        00658D38
 
-                ; this line is for debugging purpose. After running the possible output is 1 or 0
-                ; 1 means this tile has item, 0 otherwise :D
-                mov call_0x658D38_ResultBeforeDecrease, eax 
+                    ; this line is for debugging purpose.After running the possible output is 1 or 0
+                    ; 1 means this tile has item, 0 otherwise :D
+                    mov call_0x658D38_ResultBeforeDecrease, eax
 
-                dec eax                                 ; 006ED897        dec         eax
-                jne LBL_006ED8DA                        ; 006ED898 > jne         006ED8C8
+                    dec eax; 006ED897        dec         eax
+                    jne LBL_006ED8DA; 006ED898 > jne         006ED8C8
 
-                mov ecx, 0xA4                           ; 006ED89A        mov         ecx, 0A4
-                mov edx, rowCounter                     ; 006ED89F        mov         edx, dword ptr[ebp - 10]
-                mov eax, columnCounter                  ; 006ED8A2        mov         eax, dword ptr[ebp - 0C]
-                call _0x00658D38WithASLR                ; 006ED8A5        call        00658D38
-                push eax                                ; 006ED8AA        push        eax
-                ; this line is for debugging purpose
-                mov call_0x658D38_ResultWithInput_ecx_0xA4, eax
+                    mov ecx, 0xA4; 006ED89A        mov         ecx, 0A4
+                    mov edx, rowCounter; 006ED89F        mov         edx, dword ptr[ebp - 10]
+                    mov eax, columnCounter; 006ED8A2        mov         eax, dword ptr[ebp - 0C]
+                    call _0x00658D38WithASLR; 006ED8A5        call        00658D38
+                    push eax; 006ED8AA        push        eax
+                    ; this line is for debugging purpose
+                    mov call_0x658D38_ResultWithInput_ecx_0xA4, eax
 
-                mov ecx, 0x98                           ; 006ED8AB        mov         ecx, 98
-                mov edx, rowCounter                     ; 006ED8B0        mov         edx, dword ptr[ebp - 10]
-                mov eax, columnCounter                  ; 006ED8B3        mov         eax, dword ptr[ebp - 0C]
-                call _0x00658D38WithASLR                ; 006ED8B6        call        00658D38
-                ; this line is for debugging purpose
-                mov call_0x658D38_ResultWithInput_ecx_0x98, eax
+                    mov ecx, 0x98; 006ED8AB        mov         ecx, 98
+                    mov edx, rowCounter; 006ED8B0        mov         edx, dword ptr[ebp - 10]
+                    mov eax, columnCounter; 006ED8B3        mov         eax, dword ptr[ebp - 0C]
+                    call _0x00658D38WithASLR; 006ED8B6        call        00658D38
+                    ; this line is for debugging purpose
+                    mov call_0x658D38_ResultWithInput_ecx_0x98, eax
 
-                mov ecx, eax                            ; 006ED8BB        mov         ecx, eax
-                mov edx, rowCounter                     ; 006ED8BD        mov         edx, dword ptr[ebp - 10]
-                mov eax, columnCounter                  ; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
-                call _0x0065ADD0WithASLR                ; 006ED8C3        call        0065ADD0        
-            LBL_006ED8DA :
+                    mov ecx, eax; 006ED8BB        mov         ecx, eax
+                    mov edx, rowCounter; 006ED8BD        mov         edx, dword ptr[ebp - 10]
+                    mov eax, columnCounter; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
+                    call _0x0065ADD0WithASLR; 006ED8C3        call        0065ADD0
+                    LBL_006ED8DA :
                 mov eax, eax; 006ED8DA        mov         eax, dword ptr[ebp - 8]
-            }          
+            }
 
             //printf("<==== Done AnFullToSection at (column x row) = (%d, %d) call_0x658D38_ResultBeforeDecrease = %d call_0x658D38_ResultWithInput_ecx_0xA4 = %d call_0x658D38_ResultWithInput_ecx_0x98 = %d\n\n", columnCounter, rowCounter, call_0x658D38_ResultBeforeDecrease, call_0x658D38_ResultWithInput_ecx_0xA4, call_0x658D38_ResultWithInput_ecx_0x98);
             if (call_0x658D38_ResultBeforeDecrease == 1) { // has item  at this tile
                 // this log to print out items collected on the map, based on the result and compare with items displaying on the map
                 // we can deduce call_0x658D38_ResultWithInput_ecx_0xA4 is the ITEM_ID
-                // 0: Balloon, 124: Needle, 54: Broze coins bag, 55: Silver coin bag, 5: Max water, 12: Water, 2: Shoe, 36: Turtle, 35: Owl, 34: UFO, 119: Red face, 212: Eggs basket, 4: Glove
+                // 0: Balloon, 124: Needle, 54: Broze coins bag, 55: Silver coin bag, 5: Max water, 12: Water, 2: Shoe, 37: Fast Turtle, 36: Slow Turtle, 35: Owl, 34: UFO, 119: Red face, 212: Eggs basket, 4: Glove
                 printf("<==== Collected item AnFullToSection at (column x row) = (%d, %d) call_0x658D38_ResultBeforeDecrease = %d call_0x658D38_ResultWithInput_ecx_0xA4 = %d call_0x658D38_ResultWithInput_ecx_0x98 = %d\n\n", columnCounter, rowCounter, call_0x658D38_ResultBeforeDecrease, call_0x658D38_ResultWithInput_ecx_0xA4, call_0x658D38_ResultWithInput_ecx_0x98);
             }
         }
@@ -420,17 +644,17 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
     // The idea of original logic for these instructions is to do 2 for loops (loop through 15 columns and 13 rows) to scan through 
     // all the tiles of the map (15x13) and then for each tile trigger call 0x0065ADD0 to trigger AnFull logic
     /*__asm
-    {        
+    {
         ; mov eax, dword ptr[ebp - 8]           ; 006ED85E        mov         eax, dword ptr[ebp - 8]
         ; mov eax, dword ptr[eax + 0x4BC]       ; 006ED861        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton
         cmp currentHoldingValue, 1              ; 006ED867        cmp         dword ptr[eax + 0C], 1; TAdvGlowButton.FTag:NativeInt
         jne LBL_006ED8DA                        ; 006ED86B > jne         006ED8DA
 
-        ; mov eax, dword ptr[ebp - 8]           ; 006ED86D        mov         eax, dword ptr[ebp - 8]        
-        ; mov eax, dword ptr[eax + 0x4BC]       ; 006ED870        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton        
+        ; mov eax, dword ptr[ebp - 8]           ; 006ED86D        mov         eax, dword ptr[ebp - 8]
+        ; mov eax, dword ptr[eax + 0x4BC]       ; 006ED870        mov         eax, dword ptr[eax + 4BC]; TForm1.btn1:TAdvGlowButton
         mov dword ptr[triggerAnFullBtnAddress + 0x0C], 2    ; 006ED876        mov         dword ptr[eax + 0C], 2; TAdvGlowButton.FTag:NativeInt
 
-        xor eax, eax                            ; 006ED87D        xor eax, eax        
+        xor eax, eax                            ; 006ED87D        xor eax, eax
         mov eax, rowCounter
         ; mov rowCounter, eax                     ; 006ED87F        mov         dword ptr[ebp - 10], eax
 
@@ -439,7 +663,7 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
         mov eax, columnCounter
         mov columnCounter, eax                  ; 006ED884        mov         dword ptr[ebp - 0C], eax
 
-    LBL_006ED887:        
+    LBL_006ED887:
         mov ecx, 0x1C                           ; 006ED887        mov         ecx, 1C
         mov edx, rowCounter                     ; 006ED88C        mov         edx, dword ptr[ebp - 10]
         mov eax, columnCounter                  ; 006ED88F        mov         eax, dword ptr[ebp - 0C]
@@ -464,8 +688,8 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
         mov eax, columnCounter                  ; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
         call _0x0065ADD0WithASLR                ; 006ED8C3        call        0065ADD0
 
-    LBL_006ED8C8:      
-        ; We add extra instructions to print counter1 and counter2 for debugging purpose, but somehow it does not appear on console log  
+    LBL_006ED8C8:
+        ; We add extra instructions to print counter1 and counter2 for debugging purpose, but somehow it does not appear on console log
         ; mov eax, rowCounter
         ; push columnCounter
         ; push eax
@@ -482,13 +706,13 @@ VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow) {
 
         inc rowCounter                          ; 006ED8D1        inc         dword ptr[ebp - 10]
         mov eax, rowCounter
-        ; this is the outter loop (iterate each row index)                          
+        ; this is the outter loop (iterate each row index)
         cmp eax, validToRow                     ; 006ED8D4        cmp         dword ptr[ebp - 10], 0D
         jne LBL_006ED882                        ; 006ED8D8 > jne         006ED882
 
-    LBL_006ED8DA:        
+    LBL_006ED8DA:
         mov eax, eax                            ; 006ED8DA        mov         eax, dword ptr[ebp - 8]
-    }*/        
+    }*/
 
 }
 
@@ -720,6 +944,7 @@ int AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity) {
     return result;
 }
 
+
 BOOL WINAPI DllMain(HMODULE hModule,
                     DWORD  ul_reason_for_call,
                     LPVOID lpReserved
@@ -729,16 +954,18 @@ BOOL WINAPI DllMain(HMODULE hModule,
     {
         case DLL_PROCESS_ATTACH:
         {
-            DisableThreadLibraryCalls(hModule);
-            AllocConsole();
+            DisableThreadLibraryCalls(hModule);                       
+            AllocConsole();            
+            
             SetConsoleTitleW(L"NEW BNB Hack Experiment ^_^");
             freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
             freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
             freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
-            printf("New BNB TW Hack Experiement Loaded! \n");
-
+                     
+            printf("New BNB TW Hack Experiement Loaded! \n");            
+            
             //CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitialiseConsoleForDebugging), (PVOID)hModule, NULL, NULL);
-
+                        
             CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitialiseKeyShortcuts), (PVOID)hModule, NULL, NULL);
             break;
         }
