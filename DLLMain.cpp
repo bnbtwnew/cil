@@ -1,4 +1,6 @@
 #pragma warning( disable : 6031 )
+#include <Windows.h>
+#include <sapi.h>
 #include "DLLMain.h"
 //#include "Common.h"
 //#include "InGameCollectItem.h"
@@ -19,6 +21,87 @@ VOID TriggerStartGame();
 VOID TriggerButton1Click();
 VOID ToggleCheckbox(int tabOrder, byte value);
 VOID ToggleOnOffCheckbox(ChucNangCheckboxTabOrder tabOrder);
+DWORD WINAPI AsyncCurlCommand(LPVOID lpParam);
+VOID SendNotification(Notification);
+
+VOID SendNotification(Notification notification) {    
+    Notification* heapNotification = new Notification();
+    heapNotification->content = notification.content;
+    cout << "SendNotification content: " << heapNotification->content;
+    HANDLE hThread = CreateThread(NULL, 0, AsyncCurlCommand, heapNotification, 0, NULL);
+    if (hThread != NULL) {
+        // Close the thread handle to free resources (the thread will continue running)
+        CloseHandle(hThread);
+        //delete heapNotification;
+    }
+    
+}
+
+DWORD WINAPI AsyncCurlCommand(LPVOID lpParam) {    
+    Notification* receivedNotification = (Notification*)lpParam;
+    // Construct the cURL command string
+    std::string curlCommand = "curl -X POST ";
+    curlCommand += "-H \"Content-Type: application/json\" ";   
+    curlCommand += "-d \"{\\\"chat_id\\\": \\\"" + TELEGRAM_CHAT_ID + "\\\", \\\"text\\\": \\\"" + receivedNotification->content + "\\\"}\" ";
+    curlCommand += "https://api.telegram.org/bot";
+    curlCommand += TELEGRAM_BOT_TOKEN;
+    curlCommand += "/sendMessage";
+    cout << "\n" << curlCommand << "\n";
+    system(curlCommand.c_str());
+
+
+    // text to speak
+    // we put it here inside a thread to make it work, otherwise it will not work
+    ISpVoice* pVoice = NULL;
+    HRESULT hr, a;
+    wstring input;
+    a = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+    if (FAILED(a))
+    {
+        cout << "SendNotification ERROR 404 FAILED INITIALIZING COM\n";
+        //return;
+        //exit(1);
+    }
+    //HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
+    hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
+    if (SUCCEEDED(hr))
+    {
+        cout << "SendNotification CoCreateInstance succeeded!!!\n";
+        //getline(wcin, input);
+
+        std::wstring stemp = std::wstring(receivedNotification->content.begin(), receivedNotification->content.end());
+        LPCWSTR sw = stemp.c_str();
+
+        hr = pVoice->Speak(sw, 0, NULL);
+        //hr = pVoice->Speak((L"<voice required='Gender = Female;'>" + input).c_str(), 0, NULL);
+        pVoice->Release();
+        pVoice = NULL;
+        cout << "SendNotification CoCreateInstance succeeded DONE!!!\n";
+    }
+    else {
+        cout << "SendNotification CoCreateInstance failed!!!\n";
+    }
+
+    
+    // this way of sending curl also working fine
+    // // Launch the cURL command asynchronously
+    // STARTUPINFOA si = { sizeof(si) };
+    // PROCESS_INFORMATION pi;
+    //if (CreateProcessA(NULL, const_cast<LPSTR>(curlCommand.c_str()), NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+    //    // Wait for the process to finish (or you can add other handling logic here)
+    //    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    //    // Close process and thread handles
+    //    CloseHandle(pi.hProcess);
+    //    CloseHandle(pi.hThread);
+
+    //    std::cout << "cURL command executed asynchronously." << std::endl;
+    //} else {
+    //    std::cerr << "Error executing cURL command." << std::endl;
+    //}
+
+    return 0;
+}
 
 std::string string_format(const std::string fmt_str, ...) {
     int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
@@ -475,17 +558,16 @@ VOID CollectAllItemsFromRange(int targetDllASLR, int fromColumn, int toColumn, i
     printf("\n\n");
 }
 
-BOOL isCollectFavouriteInGameItemsDone = true;
-VOID CollectFavouriteInGameItems(int targetDllASLR) {
-    if (!isCollectFavouriteInGameItemsDone) {
-        myPrintf("!!!!!CollectFavouriteInGameItems is still in progress, no more proceeding until it's done!!!");
-        return;
-    }
-    isCollectFavouriteInGameItemsDone = false;
+VOID CollectFavouriteInGameItems(int targetDllASLR) {    
     int REMOVED_ITEM_ID = -1;
     int favoriteItems[] = { IN_GAME_ITEM_MAX_WATER, IN_GAME_ITEM_NEEDLE };
     int totalItems = sizeof(favoriteItems) / sizeof(favoriteItems[0]);
     int counter = 0;    
+    int totalTurtles = 0;
+
+    int fastTurtleColumn = -1;
+    int fastTurtleRow = -1;
+    Notification foundFastTurtleNotification;
 
     try {
         for (int row = 0; row < MAX_GAME_MAP_ROW; row++)
@@ -498,18 +580,28 @@ VOID CollectFavouriteInGameItems(int targetDllASLR) {
                 }
                 int currentItemID = GetItemID(targetDllASLR, column, row);
                 for (int i = 0; i < totalItems; i++) {
+                    if (currentItemID == IN_GAME_ITEM_FAST_TURTLE) {
+                        totalTurtles++;
+                        fastTurtleColumn = column;
+                        fastTurtleRow = row;
+                    }
+
+                    if (currentItemID == IN_GAME_ITEM_SLOW_TURTLE) {
+                        totalTurtles++;
+                    }
+
                     if (currentItemID == favoriteItems[i]) {
                         printf("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row);
                         myPrintf(string_format("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row));
                         //CollectItemAtTile(targetDllASLR, column, row);
                         int mysteriousNumber = GetMysteriousNumber(targetDllASLR, column, row, currentItemID);
-                        myPrintf(string_format("CollectFavouriteInGameItems mysteriousNumber %d at (%d, %d)\n", mysteriousNumber, column, row));
-
+                        myPrintf(string_format("CollectFavouriteInGameItems mysteriousNumber %d at (%d, %d)\n", mysteriousNumber, column, row));                        
+                        
                         CollectItemAtTile(targetDllASLR, column, row, currentItemID, mysteriousNumber);
 
                         // we only want to collect one, not all item of the same kind, hence set invalid item id to not collect again
                         favoriteItems[i] = REMOVED_ITEM_ID;
-                        myPrintf(string_format("CollectFavouriteInGameItems removed ItemID %d from favorites!\n", favoriteItems[i]));
+                        myPrintf(string_format("CollectFavouriteInGameItems removed ItemID %d from favorites!\n", favoriteItems[i]));                        
                     }
                 }
 
@@ -522,7 +614,24 @@ VOID CollectFavouriteInGameItems(int targetDllASLR) {
         printf("CollectFavouriteInGameItems exception!!!\n");
     }
 
-    isCollectFavouriteInGameItemsDone = true;
+    // logic to send telegram notification if found fast turtle
+    if (totalTurtles > 0) {
+
+        string message = "";
+        if (fastTurtleColumn >= 0) { // has fast turtle
+            if (totalTurtles == 1) { // only one turtle and it's fast one
+                message = "Found fast turtle!!!";
+            }
+            else {
+                message = string_format("Found fast turtle at (%d, %d)", fastTurtleColumn, fastTurtleRow);
+            }
+
+            foundFastTurtleNotification.content = message;
+            SendNotification(foundFastTurtleNotification);
+            printf("CollectFavouriteInGameItems Found fast turtle and sent notification with messagge %s\n", message);
+        }
+    }
+
     printf("\n\n");
 }
 
@@ -965,8 +1074,8 @@ BOOL WINAPI DllMain(HMODULE hModule,
             printf("New BNB TW Hack Experiement Loaded! \n");            
             
             //CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitialiseConsoleForDebugging), (PVOID)hModule, NULL, NULL);
-                        
-            CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitialiseKeyShortcuts), (PVOID)hModule, NULL, NULL);
+                                    
+            CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(InitialiseKeyShortcuts), (PVOID)hModule, NULL, NULL);           
             break;
         }
         case DLL_PROCESS_DETACH:

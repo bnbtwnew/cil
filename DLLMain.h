@@ -8,6 +8,7 @@
 
 #include "exports.h"
 #include "Utils.h"
+#include "TelegramSecret.h"
 
 #pragma intrinsic(_ReturnAddress)
 
@@ -43,6 +44,7 @@ enum IN_GAME_MAP_ITEM {
     IN_GAME_ITEM_SHOE = 2,
     IN_GAME_ITEM_GLOVE = 4,
     IN_GAME_ITEM_MAX_WATER = 5,
+    IN_GAME_ITEM_SLOW_TURTLE = 36,
     IN_GAME_ITEM_FAST_TURTLE = 37,
     IN_GAME_ITEM_RED_FACE = 119,
     IN_GAME_ITEM_DART = 122,
@@ -51,6 +53,15 @@ enum IN_GAME_MAP_ITEM {
 
 int MAX_GAME_MAP_COLUMN = 15; // 0xF
 int MAX_GAME_MAP_ROW = 13; // 0xD
+
+class Notification {       // The class
+public:             // Access specifier
+    std::string content;  // Attribute (string variable)
+
+    /*Notification(string _content) {                
+        content = _content;
+    }*/
+};
 
 VOID AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow);
 VOID AnFullAtDirection(int targetDllASLR, Direction direction);

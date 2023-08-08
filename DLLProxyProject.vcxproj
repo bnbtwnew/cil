@@ -198,6 +198,7 @@
     <ClInclude Include="CommonCRT.h" />
     <ClInclude Include="DLLMain.h" />
     <ClInclude Include="exports.h" />
+    <ClInclude Include="TelegramSecret.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
