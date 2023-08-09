@@ -10,6 +10,7 @@
 // 3. From DLL Export Viewer, we can proxy like below
 //#pragma comment(linker,"/export:FunctionNameA=TARGETMODULE.FunctionNameA,@1")
 #define TARGET_MODULE_DLL "d3dx9_help.dll"
+#define TARGET_MODULE_DLL_STATIC_BASE_ADDRESS 0x400000
 
 #pragma comment(linker,"/export:InstallDWK=d3dx9_help.InstallDWK,@3")
 #pragma comment(linker,"/export:TMethodImplementationIntercept=d3dx9_help.TMethodImplementationIntercept,@1")
