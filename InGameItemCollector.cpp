@@ -11,6 +11,12 @@ void InGameItemCollector::UpdateDllASLR(int aslrOffset) {
 }
 
 void InGameItemCollector::CollectFavouriteItems() {
+    int isPlaying = GameUtils::isGamePlaying();
+    if (!isPlaying) {
+        log_debug("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
+        return;
+    }
+
     int REMOVED_ITEM_ID = -1;
     int favoriteItems[] = { IN_GAME_ITEM_MAX_WATER, IN_GAME_ITEM_NEEDLE };
     int totalItems = sizeof(favoriteItems) / sizeof(favoriteItems[0]);
@@ -88,6 +94,12 @@ void InGameItemCollector::CollectFavouriteItems() {
 }
 
 void InGameItemCollector::CollectFavouriteItemsAssemblyVersion() {
+    int isPlaying = GameUtils::isGamePlaying();
+    if (!isPlaying) {
+        log_debug("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
+        return;
+    }
+
     // TODO: This version is using assembly to double check and compare with other version if no crashing on this    
     int _0x00658D38WithASLR = targetDllASLR + 0x00658D38;
     int _0x0065ADD0WithASLR = targetDllASLR + 0x0065ADD0;

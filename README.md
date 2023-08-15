@@ -6,6 +6,42 @@ A skeleton Windows C++ DLL project for proxying
     - 00705640:  0080A44Dh => 1 XREF:  ->  FUN_00658d38_CheckTileHasItemToEat DAT_00705640. This 0080A44Dh is a sub routine, need to dive in
     - 00705544: 0044F0F1h => 8 XREFs (include FUN_00658d38_CheckTileHasItemToEat), another sub routine. This sub routine will return 0/1, in FUN_00658d38_CheckTileHasItemToEat() method it's to tell if has item at (column, row)
 
+- Reverse to list all game Item ID
+    - We know that AddItem function is calling address 0x79275a which is CA.exe sub routine
+    - This sub_79275a calling sub_9a459c(itemID) which is calling sub_9a7334(itemID), hence by using Frida we can hook sub_9a7334(itemID) method and print out the item ID when logging the app
+    - Frida is able to successfully dumb thousands of valid ItemID (not all yet) after login from login screen to lobby
+    - If you click into Item Bag, it only load ItemIDs of the items you have
+
+- Using ClassInformer in  IDA, we found some interesting class:
+	- CGOBomber -> this look like a player class that inherit many classes or interface such as IEatObject, IAbilityObject
+
+	- This code is a method of CGOBomber, maybe it's using Nitro item and increase usage by one, consider to reverse and hack this not to increase?
+// #STR: "Item/Nitro"
+int __thiscall sub_6765E5(_DWORD *this)
+{
+  int result; // eax
+  char v3; // al
+
+  result = sub_673182(this - 356);
+  if ( result )
+  {
+    v3 = sub_44F0F1(this + 2092);
+    sub_44F3A4(this + 2095, v3);
+    sub_44F3A4(this + 2092, 168);
+    this[2103] = 0;
+    this[2104] = 0;
+    if ( sub_44F0F1(this + 10) >= 0 )
+      sub_6755CB(aItemNitro);
+    return 1;
+  }
+  return result;
+}
+
+- Shop Modify Dialog
+	.text:00D8E3D4     aShopModifyDial db 'Shop Modify Dialog',0
+	- Reverse to see how to trigger this dialog in game, it allow to modify item
+- Find how to show CDialogWnd in c++ to show Shop  Modify Dialog
+- Proxy nmco3.dll, there are tons of interesting method like GetFriendList...
 
 New BNB TW Hack Experiement Loaded!
 AnFullAtDirection fromColumn = 0 toColumn = 8 fromRow = 0 toRow = 7

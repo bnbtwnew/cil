@@ -11,6 +11,16 @@
 using namespace std;
 
 namespace GameUtils {    
+    enum GameState {
+        GAME_STATE_NOT_LAUNCHED = 0,
+        GAME_STATE_LOGIN_SCREEN = 1,
+        GAME_STATE_LOGIN_LOADING = 0x17,
+        GAME_STATE_WAITING_AT_LOBBY = 0xB,
+        GAME_STATE_WAITING_INSIDE_ROOM = 0xC,
+        GAME_STATE_PLAYING = 0xD,
+        GAME_STATE_SHOPPING = 0xE
+    };
+
     int GetTargetModuleDllBase() {
         int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
         printf("GameUtils::GetTargetModuleDllBase %s dllBase %x\n", TARGET_MODULE_DLL, dllBase);
@@ -74,6 +84,218 @@ namespace GameUtils {
         }
 
         return mysteriousNumber;
+    }
+
+    int GetGameState() {
+        // this is porting from the logic of sub_658f00() in dll file
+        /*
+        int sub_658f00() {
+            esp = esp - 0x8;
+            eax = *dword_70559c; // 0x00ff9458
+            eax = *eax; // *0x00ff9458
+            if (eax != 0x0) {
+                    var_4 = *(eax + 0xd4);
+            }
+            eax = var_4;
+            return eax;
+        }
+        
+        - Check this address in CA.exe, we can see there are 2 methods xref: sub_43abc5 and sub_45aa8a
+            dword_ff9458:
+        00ff9458         dd         0x00000000                                          ; DATA XREF=sub_43abc5+63, sub_43abc5+83, sub_43abc5+103, sub_43abc5+123, sub_43abc5+189, sub_43abc5+209, sub_43abc5+229, sub_43abc5+318, sub_43abc5+334, sub_43abc5+350, sub_45aa8a+273
+        
+        - navigate to sub_43abc5, we can see there are possible game states here
+            if ((((((sub_9dd07b_GetGameState() == 0xa) || (sub_9dd07b_GetGameState() == 0x11)) || (sub_9dd07b_GetGameState() == 0x10)) || (sub_9dd07b_GetGameState() == 0xc)) || (sub_9c0fdb() != 0x0)) || (sub_9c0f17() != 0x0)) goto loc_43ad70;
+        - And another one:
+        int sub_9dd79f() {
+            eax = *(ecx + 0xd0);
+            return eax;
+        }
+        */
+        int* DAT_0070559c_value = (int*)0x00ff9458;
+        if (*DAT_0070559c_value != 0) {
+            int gameObjectMaybeAddress = *DAT_0070559c_value;
+            return *(int*)(gameObjectMaybeAddress + 0xd4);
+        }
+        return 0;
+    }
+
+    bool isGamePlaying() {
+        return GetGameState() == GAME_STATE_PLAYING;
+    }
+
+    bool isShopping() {
+        return GetGameState() == GAME_STATE_SHOPPING;
+    }
+
+    // Reversing this method, this is part of sub_658D38 that is calling for GetItemID, HasItemAtTile
+    int sub_658a2c_Retrieve_Object_Address_When_GameIsPlaying() {
+        // eax = *(*dword_7055b4 + *(*dword_7055ac + **dword_70557c));
+        //              dword_7055b4:
+        // 007055b4         dd         0x001df02c
+        // => *dword_7055b4 = 0x001df02c => CA.exe pointer
+        // *dword_7055ac = 0x00006750
+        // *dword_70557c =  0x00ff9734 => CA.exe pointer
+        // **dword_70557c = *0x00ff9734
+        
+        // => eax = *(0x001df02c + *(0x00006750 + *0x00ff9734))
+        /*00658a32         mov        ecx, dword [dword_70557c]                           ; dword_70557c
+        00658a38         mov        ecx, dword [ecx]
+        00658a3a         mov        edx, dword [dword_7055ac]                           ; dword_7055ac
+        00658a40         mov        ecx, dword [edx+ecx]
+        00658a43         mov        edx, dword [dword_7055b4]                           ; dword_7055b4
+        00658a49         mov        ecx, dword [edx+ecx]*/
+        
+        /*int ecx = 0x00ff9734;
+        ecx = *(int*)ecx;
+        int edx = 0x00006750;
+        ecx = *(int*)(ecx + edx);
+        edx = 0x001df02c;
+        ecx = *(int*)(ecx + edx);
+        log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address ecx = %x\n", ecx);*/
+
+        if (!isGamePlaying()) {
+            log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address this method only can be called when game is playing, otherwise it will crash!!\n");
+            return 0;
+        }
+
+        int eax = *(int*)(0x001df02c + *(int*)(0x00006750 + *(int*)0x00ff9734));
+        log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address eax = %x\n", eax);
+        return eax;
+        //return eax;
+    }
+
+    int sub_00658d38(int eax_column, int edx_row, int ecx_offset) {
+        /*
+          int iVar1;
+            undefined4 local_14;
+                var_C = ecx; // offset
+                var_8 = edx; // row
+                var_4 = eax; // column
+            iVar1 = FUN_00658f00_GetGameState();
+            if (iVar1 == 0xd) {
+                eax = sub_658a2c_Retrieve_Object_Address_When_GameIsPlaying(); // will retrieve some base object                                
+                ecx = (*DAT_00705640)(); // sub_80a44d(row, column)
+                ecx = eax + offset ;
+                local_14 = (*DAT_00705544)();
+            }
+            return local_14;
+        */
+
+        int gameState = GetGameState();
+        if (gameState == GAME_STATE_PLAYING) {
+            int gamePlayingObjectAddress = sub_658a2c_Retrieve_Object_Address_When_GameIsPlaying();
+            
+            //   DAT_00705640:
+            //  00705640 0080A44Dh
+
+            // *DAT_00705640 => 0x80A44D => CA.exe sub method
+            /*
+            int sub_80a44d(int arg0, int arg1) {
+                var_8 = arg1; // column
+                var_4 = arg0; // row
+                esi = ecx; // some unknow base class pointer
+                if (*(esi + 0x1714) == *(esi + 0x1718)) {
+                        eax = 0x0;
+                }
+                else {
+                        edi = sub_815d3a(row, column);
+                        esp = esp - 0x10;
+                        if (sub_8188d2(edi) == 0x0) {
+                                eax = 0x0;
+                        }
+                        else {
+                                eax = edi * 0x13c + *(esi + 0x1714);
+                        }
+                        esp = esp + 0x4;
+                }
+                return eax;
+            }
+
+            int sub_815d3a(int row, int column) {
+                var_8 = arg1; // column
+                esi = arg0; // row
+                esp = esp - 0x4;
+                edi = ecx;
+                if (esi >= 0x0) {
+                        var_4 = edi + 0x38;
+                        eax = sub_44f0f1();
+                        if ((esi <= eax) && (var_8 >= 0x0)) {
+                                edi = edi + 0x2c;
+                                var_4 = edi;
+                                eax = sub_44f0f1();
+                                if (var_8 <= eax) {
+                                        edi = sub_44f0f1() * esi;
+                                        esi = sub_44f0f1();
+                                        eax = sub_44f0f1();
+                                        eax = eax * esi - 0x1;
+                                        edi = edi + var_8;
+                                        if (edi >= 0x0) {
+                                                if (edi <= eax) {
+                                                        eax = edi;
+                                                }
+                                                else {
+                                                        eax = eax | 0xffffffff;
+                                                }
+                                        }
+                                        else {
+                                                eax = eax | 0xffffffff;
+                                        }
+                                }
+                                else {
+                                        eax = eax | 0xffffffff;
+                                }
+                        }
+                        else {
+                                eax = eax | 0xffffffff;
+                        }
+                }
+                else {
+                        eax = eax | 0xffffffff;
+                }
+                return eax;
+            }
+            */
+
+
+            // 00705544  0044F0F1h => *DAT_00705544 = 0x0044F0F1 => CA.exe sub method
+
+        }
+
+        return 0; // temporary only, for compiler error
+    }
+
+    /*
+    This method used to check if the given skill item ID is valid or not, as we know the game has thousands of item like balloon, needle, themes...
+    How I know this function?
+        - First we know that AddItem function is calling sub routine sub_79275a(arg1, itemID, quantity, arg4) from CA.exe
+        - Have a look inside this sub_79275a we can see it's calling sub_9A459C(itemID, &arg2, &arg3, &arg4) and inside it's calling sub_9A7334(itemID) that only given 1 argument is itemID,
+        and this sub_9A459C is simple as given itemID it can return an object or return 0 (nil)
+        - Hence we can simulate the implementation of sub_9A459C to enumerate all possible item id in the BNB Taiwan, if the return is not zero it means the itemID is valid    
+    */
+    bool IsSkillItemIDValid(int itemID) {
+        /*
+        sub_9A7334(itemID) need value of ecx which is assigned from caller sub_79275a:
+            .text:0079276A                 mov     ecx, [dword_FF9498] => ecx = *(int*)0xFF9498
+        */
+        int* FF9498 = (int*)0xFF9498;
+        int FF9498_Value = *FF9498;        
+        
+        int result = 0;
+        /*
+        Now we will simulate like sub_9A459C body to call sub_9A7334
+        */
+        __asm {
+            mov eax, itemID
+            push eax
+            mov ecx, FF9498_Value; find Xref of sub_9A459C we find the before enter this routine it set ecx to[0xFF9498] at 0x0079276A
+            add     ecx, 0xC
+            mov eax, 0x9a7334
+            call eax; call sub_9A7334(itemID)
+            mov result, eax; move either 0 or pointer to our local variable
+        };
+
+        return result;
     }
 
     std::string string_format(const std::string fmt_str, ...) {

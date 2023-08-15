@@ -7,6 +7,7 @@ public:
 	GameSetup(int targetDllASLR);
 	void UpdateDllASLR(int aslrOffset);
 	void AddBundleItems();
+	int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity);
 
 private:
 	int targetDllASLR;

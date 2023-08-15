@@ -10,6 +10,7 @@ public:
     void Initialize();
     void Deinitialize();
     DWORD WINAPI InitialiseKeyShortcuts();
+    DWORD WINAPI InitialiseConsoleForDebugging();
 
 private:
     HMODULE hModule;

@@ -34,7 +34,7 @@ void GameSetup::AddBundleItems() {
 
     for (index = 0; index < totalItems; index++) {
         int quantity = itemIds[index];
-        int result = _AddItem(itemIds[index], 0, 0, quantity);
+        int result = AddItem(itemIds[index], 0, 0, quantity);
         if (result > 0) {
             successfulAddedItemCount++;
         }
@@ -43,13 +43,26 @@ void GameSetup::AddBundleItems() {
     printf("Added %d/%d items successfully!\n", successfulAddedItemCount, totalItems);
 }
 
-int GameSetup::_AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity) {
+int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity) {
     /*printf("Start adding item... for itemID = %d", itemID);
     printf("hihi");*/
     int result = 0;
     try {
         DWORD bnbAddItemFunctionAddress = 0x79275a;
         //DWORD quantity = itemID;
+        /*
+        // this is the logic of add item from CA.exe file
+        // so basically esi is Item object where *esi is itemID, esi + 0x4 is quantity
+        if (esi != *(ebp - 0x54)) {
+                edi = *(ebp - 0x90);
+                do {
+                        sub_79275a(edi, *esi, *(esi + 0x4), *(esi + 0x8));
+                        esi = esi + 0x20;
+                        esp = (esp - 0x10) + 0x10;
+                } while (esi != *(ebp - 0x54));
+                edi = *(ebp - 0x8c);
+        }
+        */
         result = ((int (*)(DWORD, DWORD, DWORD, DWORD))bnbAddItemFunctionAddress)(firstArg, itemID, quantity, fourthArg);
         //                      ==========     --> addr of the function to call
         //        =============                --> type of the function to call
