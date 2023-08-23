@@ -4,6 +4,7 @@
 #include <cstdarg>
 //#include <iosfwd>
 #include <iostream>
+#include <fstream>
 #include <Windows.h>
 #include <tchar.h>
 #include "exports.h"
@@ -126,6 +127,50 @@ namespace GameUtils {
 
     bool isShopping() {
         return GetGameState() == GAME_STATE_SHOPPING;
+    }
+
+    void EnumerateProperties() {
+        int objectAddress = *(int*)0xFF9734;
+        // from IDA Class Informer tab, we can see the Class Address records range from 0xD38BCC to 0xDE9EA8
+        int IDA_CLASS_INFORMER_FOUND_START_ADDRESS = 0xD38BCC;
+        int IDA_CLASS_INFORMER_FOUND_END_ADDRESS = 0xDE9EA8;
+        int BnBTW_CA_IMAGE_BASE = 0x400000;
+        int offset;
+        int maxOffset = 0x6950;
+        std::ofstream logfile("enumerate_properties_pointers.txt", std::ios_base::app);
+        
+        for (offset = 0; offset <= maxOffset; offset += 4)
+        {
+            int propertyAddressAtOffset = objectAddress + offset;
+            int propertyValueAtOffset = *(int*)propertyAddressAtOffset;
+
+            printf("checking offset %d with propertyValueAtOffset %x\n", offset, propertyValueAtOffset);
+
+            // to make sure we have valid access, let assume the value should be at least greater than base image
+            if (propertyValueAtOffset < BnBTW_CA_IMAGE_BASE) {
+                continue;
+            }
+
+            //__try
+            //{
+                // we will try to check if this propertyValueAtOffset is a pointer
+
+                int valueAtAddress = *(int*)propertyValueAtOffset;
+                if (valueAtAddress >= IDA_CLASS_INFORMER_FOUND_START_ADDRESS && valueAtAddress <= IDA_CLASS_INFORMER_FOUND_END_ADDRESS) {
+                    // possible a pointer
+                    cout << hex << offset;
+                    cout << "\t\t" << hex << valueAtAddress;
+                    cout << "\n";
+                }
+            //}
+            //__except(EXCEPTION_EXECUTE_HANDLER)
+            //{
+                
+            //}
+
+        }
+        printf("Done enumerating!!\n");
+        logfile.close();
     }
 
     // Reversing this method, this is part of sub_658D38 that is calling for GetItemID, HasItemAtTile
@@ -358,3 +403,4 @@ namespace GameUtils {
         logFile.close();*/
     }
 };
+

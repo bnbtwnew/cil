@@ -1,5 +1,6 @@
 #pragma once
 #include "GameUtils.h"
+#include <chrono>
 using namespace GameUtils;
 
 class InGameItemCollector {
@@ -26,6 +27,7 @@ public:
 
 private:
     int targetDllASLR;    
+    std::chrono::steady_clock::time_point _lastCollectedFavoriteItemsTimePoint = std::chrono::steady_clock::now();
     void CollectItemAtTile(MapPoint point);
     void CollectItemAtTile(MapPoint point, int itemID, int mysteriousNumber);
     //void AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow);

@@ -13,14 +13,17 @@ void GameSetup::AddBundleItems() {
         89997, // khien tu dong
         89998, // sieu khien nuoc
         89999, // sieu nhan sam
+        100000, // kim (kem` dong` ho`) => we use this item instead of smiley face because in game this item will auto popup suggest us to use instead of other ones
+        100001, // fi tieu (kem` dong` ho`)
+        100002, // rua` vip (kem` dong` ho`)
         100003, // nhay?
 
         // these items has the smiley face icon
-        150654, // kim
+        //150654, // kim
         150655, // khien
         150658, // nhan sam
-        150659, // phi tieu
-        150660, // ca' hop.
+        //150659, // phi tieu
+        //150660, // ca' hop.
         150661, // co` le
         150662, // thau' kinh'
         150663, // giai doc

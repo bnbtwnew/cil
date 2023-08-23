@@ -27,6 +27,7 @@ namespace GameUtils {
 	int GetItemID(int targetDllASLR, MapPoint point);
 	int GetMysteriousNumber(int targetDllASLR, MapPoint, int itemID);
 	bool IsSkillItemIDValid(int itemID);
+	void EnumerateProperties();
 	std::string FormatString(const std::string fmt_str, ...);
 	void log_debug(const std::string fmt_str, ...);
 };

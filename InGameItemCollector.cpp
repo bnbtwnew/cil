@@ -17,6 +17,15 @@ void InGameItemCollector::CollectFavouriteItems() {
         return;
     }
 
+    // FIXME: Add another check to prevent spamming collect in a short amount of time that can cause crashing, maybe only allow to collect again after 3 seconds
+    std::chrono::steady_clock::time_point currentTimepoint = std::chrono::steady_clock::now();
+    long long secondsElapsed = (std::chrono::duration_cast<std::chrono::microseconds>(currentTimepoint - _lastCollectedFavoriteItemsTimePoint).count()) / 1000000;
+    log_debug("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
+    if (secondsElapsed < 5) {
+        log_debug("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
+        return;
+    }
+
     int REMOVED_ITEM_ID = -1;
     int favoriteItems[] = { IN_GAME_ITEM_MAX_WATER, IN_GAME_ITEM_NEEDLE };
     int totalItems = sizeof(favoriteItems) / sizeof(favoriteItems[0]);
@@ -70,6 +79,9 @@ void InGameItemCollector::CollectFavouriteItems() {
         log_debug("CollectFavouriteInGameItems exception!!!\n");
     }
 
+    // collected successfully, update time point
+    _lastCollectedFavoriteItemsTimePoint = std::chrono::steady_clock::now();
+
     // logic to send telegram notification if found fast turtle
     if (totalTurtles > 0) {
 
@@ -97,6 +109,15 @@ void InGameItemCollector::CollectFavouriteItemsAssemblyVersion() {
     int isPlaying = GameUtils::isGamePlaying();
     if (!isPlaying) {
         log_debug("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
+        return;
+    }
+
+    // FIXME: Add another check to prevent spamming collect in a short amount of time that can cause crashing, maybe only allow to collect again after 3 seconds
+    std::chrono::steady_clock::time_point currentTimepoint = std::chrono::steady_clock::now();
+    long long secondsElapsed = (std::chrono::duration_cast<std::chrono::microseconds>(currentTimepoint - _lastCollectedFavoriteItemsTimePoint).count()) / 1000000;
+    log_debug("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
+    if (secondsElapsed < 5) {
+        log_debug("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
         return;
     }
 
@@ -186,6 +207,9 @@ void InGameItemCollector::CollectFavouriteItemsAssemblyVersion() {
             }
         }
     }
+
+    // collected successfully, update time point
+    _lastCollectedFavoriteItemsTimePoint = std::chrono::steady_clock::now();
     
 }
 

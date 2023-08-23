@@ -5,8 +5,18 @@
 #include "GameUtils.h"
 #include <iostream>
 #include <fstream>
+#include <string.h>
+#include "GameNotificationService.h"
+
+#include "Detours/include/detours.h"
+
+#pragma comment(lib, "Detours/lib/detours.lib")
+//#pragma comment(lib, "detoured.lib")
+//#pragma comment(lib, "nmco3.lib")
 
 using namespace std;
+
+void DetoursExample();
 
 HackModule::HackModule(HMODULE hModule) : hModule(hModule), _itemCollector(0), _gameSetup(0) {}
 
@@ -51,9 +61,12 @@ void HackModule::Initialize() {
      targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
      _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);*/
-    CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseConsoleForDebugging), this, NULL, NULL);
+    /*GameNotificationService::Notification n = GameNotificationService::Notification("hihi");
+    GameNotificationService::SendNotification(n);*/
+
+    //CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseConsoleForDebugging), this, NULL, NULL);
     
-    //CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseKeyShortcuts), this, NULL, NULL);
+    CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseKeyShortcuts), this, NULL, NULL);
 }
 
 void HackModule::Deinitialize() {
@@ -67,6 +80,8 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
     targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);
+
+    // DetoursExample();
 
     while (true)
     {
@@ -113,16 +128,126 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
 
 }
 
+
+int (*dNMCOGetMyStatus)();
+int My_NMCOGetMyStatus();
+
+int (*dNMCOGetFriendList)(int, int, int);
+int My_NMCOGetFriendList(int a1, int a2, int a3);
+
+int (*dNMCOLogin)(char*, char*, char*, int, int, int);
+int My_NMCOLogin(char* Source, char* a2, char* a3, int a4, int a5, int a6);
+
+int (*dAddItem)(DWORD, DWORD, DWORD, DWORD);
+int My_AddItem(DWORD, DWORD, DWORD, DWORD);
+
+int My_AddItem(DWORD arg0, DWORD itemID, DWORD quantity, DWORD arg3) {
+    printf("My_AddItem reached!!!\n");
+    int status = My_AddItem(arg0, itemID, quantity, arg3);
+    printf("My_AddItem AddItem = %d\n", status);
+    return status;
+}
+
+int My_NMCOGetMyStatus() {
+    printf("My_NMCOGetMyStatus reached!!!\n");
+    int status = dNMCOGetMyStatus();
+    printf("My_NMCOGetMyStatus NMCOGetMyStatus = %d\n", status);
+    return status;
+}
+
+int My_NMCOGetFriendList(int a1, int a2, int a3) {
+    printf("My_NMCOGetFriendList reached!!!\n");
+    int result = dNMCOGetFriendList(a1, a2, a3);
+    printf("My_NMCOGetFriendList NMCOGetFriendList result = %d\n", result);
+    return result;
+}
+
+int My_NMCOLogin(char* Source, char* a2, char* a3, int a4, int a5, int a6) {
+    printf("My_NMCOLogin reached!!!\n");
+    int result = dNMCOLogin(Source, a2, a3, a4, a5, a6);
+    printf("My_NMCOLogin NMCOLogin result = %d\n", result);
+    return result;
+}
+
+//typedef BOOL (WINAPI* ShowWindowType)(CWnd*, int);
+//ShowWindowType OriginalShowWindow = nullptr;
+//BOOL WINAPI HookedShowWindow(CWnd* pWnd, int nCmdShow) {
+//    WINAPI result = OriginalShowWindow(pWnd, nCmdShow);
+//    printf("HookedShowWindow nCmdShow = %d result = %d\n", nCmdShow, result);
+//
+//    // Call the original ShowWindow function
+//    return result;
+//}
+
+VOID DetoursExample() {
+    int dllBase = (int)GetModuleHandle(_T("nmco3.dll"));
+    log_debug("HackModule::InitialiseConsoleForDebugging %s base = %x\n", "nmco3.dll", dllBase);
+    int nmco3ASLR = dllBase - 0x10001000;//TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
+    int NMCOGetMyStatusAddress = nmco3ASLR + 0x10010B10;
+    dNMCOGetMyStatus = (int(*)())NMCOGetMyStatusAddress;
+
+    int NMCOGetFriendListStatusAddress = nmco3ASLR + 0x100109C0;
+    dNMCOGetFriendList = (int(*)(int, int, int))NMCOGetFriendListStatusAddress;
+
+    int NMCOLoginAddress = nmco3ASLR + 0x10010730;
+    dNMCOLogin = (int(*)(char*, char*, char*, int, int, int))NMCOLoginAddress;
+
+    dAddItem = (int (*)(DWORD, DWORD, DWORD, DWORD))0x79275a;
+    
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)dNMCOGetMyStatus, My_NMCOGetMyStatus);
+    if (DetourTransactionCommit() == NO_ERROR)
+        printf("DetoursExample NMCOGetMyStatus() detoured successfully\n");
+    else 
+        printf("DetoursExample NMCOGetMyStatus() detoured failed\n");
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)dNMCOGetFriendList, My_NMCOGetFriendList);
+    if (DetourTransactionCommit() == NO_ERROR)
+        printf("DetoursExample NMCOGetFriendList() detoured successfully\n");
+    else 
+        printf("DetoursExample NMCOGetFriendList() detoured failed\n");
+
+    // Working fine, but this method is called so many times hence it might crash
+    // DetourTransactionBegin();
+    // DetourUpdateThread(GetCurrentThread());
+    // DetourAttach(&(PVOID&)dAddItem, My_AddItem);
+    // if (DetourTransactionCommit() == NO_ERROR)
+    //     printf("DetoursExample AddItem() detoured successfully\n");
+    // else
+    //     printf("DetoursExample AddItem() detoured failed\n");
+
+    /*OriginalShowWindow = (ShowWindowType)GetVTableFunctionAddress(&CWnd::ShowWindow);
+    if (OriginalShowWindow) {
+        LONG result = DetourTransactionBegin();
+        result |= DetourUpdateThread(GetCurrentThread());
+        result |= DetourAttach(&(PVOID&)OriginalShowWindow, HookedShowWindow);
+        result |= DetourTransactionCommit();
+
+        if (result == NO_ERROR) {
+            printf("DetoursExample CWnd::ShowWindow() detoured successfully\n");
+        } else {
+            printf("DetoursExample CWnd::ShowWindow() detoured failed\n");
+        }
+    }*/
+    
+}
+
 DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
 {
     // Sleep 3 seconds to wait for target module dll loaded
     Sleep(3000);
 
+    //DetoursExample();
+
     int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
     log_debug("HackModule::InitialiseConsoleForDebugging %s base = %x\n", TARGET_MODULE_DLL, dllBase);
     targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     _itemCollector.UpdateDllASLR(targetDllASLR);
-    _gameSetup.UpdateDllASLR(targetDllASLR);
+    _gameSetup.UpdateDllASLR(targetDllASLR);    
 
     // Working fine
     //DWORD itemID = 0;
@@ -175,7 +300,8 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
         cout << "\t11. Find all valid Items ID\n";
         cout << "\t12. Experiment Mua Nhanh \n";
         cout << "\t13. Bong mo den \n";
-        cout << "\t14. Retrieve username \n";
+        cout << "\t14. Retrieve username \n";        
+        cout << "\t15. Enumerate pointers for Object at address\n";
         cout << "\t0. Exit\n";
         cout << "\n";
         cout << "Enter option: ";
@@ -539,44 +665,110 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             int eaxFunctionPointer = 0x009CEF3F;
             int FF9734_Value = *(int*)0xFF9734;
             int selectedMoveEffectType = 3;
+            int debug_call_eaxFunctionPointer_0x009CEF3F = 0;
+            int debug_ebx_value = 0;
+            int debug_eax_ptr_value_of_eax_plus_0x6750 = 0;
+            int debug_eax_ptr_value_of_eax_plus_0x10 = 0;
+            int debug_ecx_ptr_value_of_eax_plus_ebx = 0;
+            int debug_ecx_ptr_value_after_plus_0x2458 = 0;
+            int debug_ecx_ptr_value_after_plus_4 = 0;
 
             printf("ecxValue: %x\n", ecxValue);
 
-            __asm {
-                ; now we port logic of sub_00896CA0
-                push 0                           ; 00896CB4        push        0
-                ; 00896CB6        mov         ecx, dword ptr ds : [8B4FEC] ; 0xFF95B8 gvar_008B4FEC
-                mov ecx, ecxValue                ; 00896CBC        mov         ecx, dword ptr[ecx]
-                mov eax, eaxFunctionPointer      ; 00896CBE        mov         eax, [008B5048]; ^ gvar_009CEF3F
-                call eaxFunctionPointer          ; 00896CC3        call        eax
-               
-                imul ebx, eax, 0x4              ; 00896CC5        imul        ebx, eax, 4; ebx = eax * 4
-                    ; 00896CC8        mov         ecx, dword ptr ds : [8B4FE0] ; 0xFF9734 gvar_008B4FE0; ecx = 0xFF9734
-                mov eax, FF9734_Value           ; 00896CCE        mov         eax, dword ptr[ecx]; eax = [0xFF9734] = *0xFF9734
-                mov ecx, 0x6750                 ; 00896CD0        mov         ecx, dword ptr ds : [8B500C] ; 0x6750 gvar_008B500C; ecx = [8B500C] = 0x6750
-                mov eax, dword ptr[ecx + eax]   ; 00896CD6        mov         eax, dword ptr[ecx + eax]; eax = [0x6750 + *0xFF9734] = *(0x6750 + *0xFF9734)
-                mov eax, dword ptr[eax + 0x10]  ; 00896CD9        mov         eax, dword ptr[eax + 10]; eax = [*(0x6750 + *0xFF9734) + 0x10] = *(*(0x6750 + *0xFF9734) + 10)
-                mov ecx, dword ptr[ebx + eax]   ; 00896CDC        mov         ecx, dword ptr[ebx + eax]; ecx = [ebx + *(*(0x6750 + *0xFF9734) + 10)] = *(ebx + *(*(0x6750 + *0xFF9734) + 10))
-                add ecx, 0x2458                 ; 00896CDF        add         ecx, 0x2458; ecx = *(ebx + *(*(0x6750 + *0xFF9734) + 10)) + 2458
-                mov eax, selectedMoveEffectType ; 00896CE5        mov         eax, [008D1BB0]; gvar_008D1BB0; eax = selectedDropdownListValue
-                mov dword ptr[ecx], eax         ; 00896CEA        mov         dword ptr[ecx], eax; *ecx = selectedDropdownListValue
-                add ecx, 4                      ; 00896CEC        add         ecx, 4; ecx = *(ebx + *(*(0x6750 + *0xFF9734) + 10)) + 2458 + 4
-                mov eax, 0xC8                   ; 00896CEF        mov         eax, 0C8
-                
-                ; tested, enable this to make the shadow bigger
-                mov dword ptr[ecx], eax         ; 00896CF4        mov         dword ptr[ecx], eax; *(*(ebx + *(*(0x6750 + *0xFF9734) + 10)) + 2458 + 4) = 0C8                
+            //__asm {
+            //    ; now we port logic of sub_00896CA0
+            //    push 0                           ; 00896CB4        push        0
+            //    ; 00896CB6        mov         ecx, dword ptr ds : [8B4FEC] ; 0xFF95B8 gvar_008B4FEC
+            //    mov ecx, ecxValue                ; 00896CBC        mov         ecx, dword ptr[ecx]
+            //    mov eax, eaxFunctionPointer      ; 00896CBE        mov         eax, [008B5048]; ^ gvar_009CEF3F
+            //    call eaxFunctionPointer          ; 00896CC3        call        eax
 
-            };
+            //    ; debug purpose
+            //    mov debug_call_eaxFunctionPointer_0x009CEF3F, eax
+
+            //    imul ebx, eax, 0x4              ; 00896CC5        imul        ebx, eax, 4; ebx = eax * 4
+            //    ; debug purpose
+            //    mov debug_ebx_value, ebx
+
+            //        ; 00896CC8        mov         ecx, dword ptr ds : [8B4FE0] ; 0xFF9734 gvar_008B4FE0; ecx = 0xFF9734
+            //    mov eax, FF9734_Value           ; 00896CCE        mov         eax, dword ptr[ecx]; eax = [0xFF9734] = *0xFF9734
+            //    mov ecx, 0x6750                 ; 00896CD0        mov         ecx, dword ptr ds : [8B500C] ; 0x6750 gvar_008B500C; ecx = [8B500C] = 0x6750
+            //    mov eax, dword ptr[ecx + eax]   ; 00896CD6        mov         eax, dword ptr[ecx + eax]; eax = [0x6750 + *0xFF9734] = *(0x6750 + *0xFF9734)
+            //    ; debug purpose
+            //    mov debug_eax_ptr_value_of_eax_plus_0x6750, eax
+            //    
+            //    mov eax, dword ptr[eax + 0x10]  ; 00896CD9        mov         eax, dword ptr[eax + 10]; eax = [*(0x6750 + *0xFF9734) + 0x10] = *(*(0x6750 + *0xFF9734) + 0x10)
+            //    ; debug purpose
+            //    mov debug_eax_ptr_value_of_eax_plus_0x10, eax
+            //    
+            //    mov ecx, dword ptr[ebx + eax]   ; 00896CDC        mov         ecx, dword ptr[ebx + eax]; ecx = [ebx + *(*(0x6750 + *0xFF9734) + 0x10)] = *(ebx + *(*(0x6750 + *0xFF9734) + 10))
+            //    ; debug purpose
+            //    mov debug_ecx_ptr_value_of_eax_plus_ebx, ecx
+            //    
+            //    add ecx, 0x2458                 ; 00896CDF        add         ecx, 0x2458; ecx = *(ebx + *(*(0x6750 + *0xFF9734) + 0x10)) + 0x2458
+            //    ; debug purpose
+            //    ; debug purpose
+            //    mov eax, dword ptr[ecx]
+            //    mov debug_ecx_ptr_value_after_plus_0x2458, eax
+
+            //    mov eax, selectedMoveEffectType ; 00896CE5        mov         eax, [008D1BB0]; gvar_008D1BB0; eax = selectedDropdownListValue
+            //    
+            //    
+            //    mov dword ptr[ecx], eax         ; 00896CEA        mov         dword ptr[ecx], eax; *ecx = selectedDropdownListValue                                                
+            //    add ecx, 4                      ; 00896CEC        add         ecx, 4; ecx = *(ebx + *(*(0x6750 + *0xFF9734) + 0x10) + 0x2458 + 0x4)
+            //    ; debug purpose
+            //    mov eax, dword ptr[ecx]
+            //    mov debug_ecx_ptr_value_after_plus_4, eax
+            //    
+            //    mov eax, 0xC8                   ; 00896CEF        mov         eax, 0C8
+            //    
+            //    
+
+            //    ; tested, enable this to make the shadow bigger
+            //    mov dword ptr[ecx], eax         ; 00896CF4        mov         dword ptr[ecx], eax; *(*(ebx + *(*(0x6750 + *0xFF9734) + 0x10)) + 0x2458 + 4) = 0C8                
+
+            //};
+            //printf("debug_call_eaxFunctionPointer_0x009CEF3F eax = %s = %x\n", "*0x009CEF3F", debug_call_eaxFunctionPointer_0x009CEF3F); // after debugging, eax is always 0 in this case
+            //printf("debug_ebx_value %s = %d\n", "ebx = eax * 4", debug_ebx_value); // as eax is always zero, hence ebx is always zero too
+            //printf("debug_eax_ptr_value_of_eax_plus_0x6750 eax = %s = %x\n", "*(*0xFF9734 + 0x6750)", debug_eax_ptr_value_of_eax_plus_0x6750);
+            //printf("debug_eax_ptr_value_of_eax_plus_0x10 eax = %s = %x\n", "*(*(*0xFF9734 + 0x6750) + 0x10)", debug_eax_ptr_value_of_eax_plus_0x10);
+            //printf("debug_ecx_ptr_value_of_eax_plus_ebx ecx = %s = %x\n", "*(ebx + *(*(*0xFF9734 + 0x6750) + 10))", debug_ecx_ptr_value_of_eax_plus_ebx);
+            //printf("debug_ecx_ptr_value_after_plus_0x2458 ecx = %s = %x\n", "*(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458)", debug_ecx_ptr_value_after_plus_0x2458);
+            //printf("debug_ecx_ptr_value_after_plus_4 ecx = %s = %x\n", "*(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10) + 0x2458 + 4)", debug_ecx_ptr_value_after_plus_4);            
+        
+            // After using cheat engine to examinie 0 => 0x3C (16 players??), all of them are valid object point to CGOAIBattleBomber
+            // let try to set effect for all of them
+            // as after debugging, debug_call_eaxFunctionPointer_0x009CEF3F is always zero, hence we can ignore the call can calculate the fixed address
+            // to set visual type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458)
+            int offset = 0;
+            for (offset = 0; offset <= 0x3C; offset += 4)
+            {
+                *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458) = selectedMoveEffectType;
+
+                // to set plus type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4)
+                *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = 0xC8;
+            }
+            
+            
             break;
         }
+
+        
+
         case 14:
         {
-            // TODO: Read player username
-            // from Cheat engine => search "phu3" => it's showing 4 addresses, one of them is CA.exe+CA09B8
-            // Focus on this one, we know that CA.exe base address is 0x400000 and CA.exe always no ASLR 
-            // => username fixed address is 0x400000+0xCA09B8 = 0x10A09B8 => same as the Cheat Engine memory address
-            char* username = (char*)0x10A09B8;
+            // TODO: Read player username            
+            // Searching in CheatEngine, for ex. phu3, beside a few places, there are 4 places in nmco3.dll that persistent fixed address no matter what
+            // nmco3.dll+4C510, nmco3.dll+4C590, nmco3.dll+4C5B0, nmco3.dll+4C600
+            // Checking with Process Explorer tool this dll is not enabled ASLR, hence those address are always fixed, we can read from there to retrieve username
+            
+            int nmco3BaseAddress = 0x10000000;
+            char* username = (char*)(nmco3BaseAddress + 0x4C510);
             printf("username: %s", username);
+            break;
+        }        
+        case 15: {
+            GameUtils::EnumerateProperties();
             break;
         }
         default:
@@ -589,4 +781,8 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
 
     printf("Exiting...");
     return 0;
+}
+
+extern "C" __declspec(dllexport) void dummy(void) {
+    return;
 }
