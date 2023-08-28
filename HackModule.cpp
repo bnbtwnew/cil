@@ -81,7 +81,7 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
     _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);
 
-    // DetoursExample();
+    DetoursExample();
 
     while (true)
     {
@@ -141,6 +141,21 @@ int My_NMCOLogin(char* Source, char* a2, char* a3, int a4, int a5, int a6);
 int (*dAddItem)(DWORD, DWORD, DWORD, DWORD);
 int My_AddItem(DWORD, DWORD, DWORD, DWORD);
 
+// lua api
+int (*dluaL_LoadBuffer)(int*, const char*, size_t, const char*);
+int My_luaL_LoadBuffer(int*, const char*, size_t, const char*);
+
+// it seems this one not being called
+int (*dluaB_dofile)(int*, const char*);
+int My_luaB_dofile(int*, const char*);
+
+// #STR: "CItemSkillInfo::IsUserItemSkill"
+char (*dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill)(int, int, int*);
+char My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill(int, int, int*);
+
+void (*dlua_pushstring)(int*, char*);
+void My_lua_pushstring(int*, char*);
+
 int My_AddItem(DWORD arg0, DWORD itemID, DWORD quantity, DWORD arg3) {
     printf("My_AddItem reached!!!\n");
     int status = My_AddItem(arg0, itemID, quantity, arg3);
@@ -169,6 +184,48 @@ int My_NMCOLogin(char* Source, char* a2, char* a3, int a4, int a5, int a6) {
     return result;
 }
 
+int __cdecl My_luaL_loadbuffer(int* lua_State, const char* buff, size_t sz, const char* description) {
+    printf("My_luaL_loadbuffer reached with description: %s!!!\n", description);
+    /*if (strlen(buff) == 5 && strcmp(buff, "LuaQ") == 0) {
+        printf("\tThis buffer is lua bytes, not file name");
+    }
+    else {*/
+        printf("\t==> lua file name: %s\n", description);
+        
+    //}
+
+    std::ofstream outfile(".\\lua_dumped\\" + GameUtils::FormatString("%s", description), std::ofstream::binary);
+    outfile.write(buff, sz);
+    outfile.close();
+
+    int result = dluaL_LoadBuffer(lua_State, buff, sz, description);
+    printf("My_luaL_loadbuffer result = %d!!!\n", result);
+    return result;
+}
+
+int __cdecl  My_luaB_dofile(int* lua_State, const char* fileName) {
+    printf("My_luaB_dofile reached file name: %s!!!\n", fileName);
+    int result = dluaB_dofile(lua_State, fileName);
+    printf("My_luaB_dofile result = %d!!!\n", result);
+    return result;
+}
+
+char My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill(int arg1, int arg2, int* arg3) {
+    printf("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill reached: %d %d!!!\n", arg1, arg2);
+    char result = dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill(arg1, arg2, arg3);    
+    printf("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill result = %c!!!\n", result);
+    return result;
+}
+
+// this working fine, something it's crashing the app, for debugging purpose to see what function Lua is using in our app
+void __cdecl My_lua_pushstring(int* lua_state, char* name) {
+    printf("My_lua_pushstring reached with name: %s\n", name);
+    //lua_pushstring_logfile(lua_state, name);
+    std::ofstream logfile(".\\lua_dumped\\pushstring.txt", std::ios_base::app);
+    logfile << name << "\n";
+    logfile.close();
+}
+
 //typedef BOOL (WINAPI* ShowWindowType)(CWnd*, int);
 //ShowWindowType OriginalShowWindow = nullptr;
 //BOOL WINAPI HookedShowWindow(CWnd* pWnd, int nCmdShow) {
@@ -193,9 +250,16 @@ VOID DetoursExample() {
     dNMCOLogin = (int(*)(char*, char*, char*, int, int, int))NMCOLoginAddress;
 
     dAddItem = (int (*)(DWORD, DWORD, DWORD, DWORD))0x79275a;
+
+    //dluaL_LoadBuffer = (int (*)(int*, const char*, size_t, const char*))0xAD8750;
+    // dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill = (char(*)(int, int, int*))0x0044D4BE;
+
+    // after testing, this seems not being called
+    // dluaB_dofile = (int (*)(int*, const char*))0x00ADA090;
+    //dlua_pushstring = (void (*)(int*, char*))0xAD7400;
     
 
-    DetourTransactionBegin();
+   /* DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)dNMCOGetMyStatus, My_NMCOGetMyStatus);
     if (DetourTransactionCommit() == NO_ERROR)
@@ -209,7 +273,41 @@ VOID DetoursExample() {
     if (DetourTransactionCommit() == NO_ERROR)
         printf("DetoursExample NMCOGetFriendList() detoured successfully\n");
     else 
-        printf("DetoursExample NMCOGetFriendList() detoured failed\n");
+        printf("DetoursExample NMCOGetFriendList() detoured failed\n");*/
+
+    // this one workingn fine, able to dump lua file plain text, not compiled one
+    /*DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)dluaL_LoadBuffer, My_luaL_loadbuffer);
+    if (DetourTransactionCommit() == NO_ERROR)
+        printf("DetoursExample dluaL_LoadBuffer() detoured successfully\n");
+    else
+        printf("DetoursExample dluaL_LoadBuffer() detoured failed\n");*/
+
+    //DetourTransactionBegin();
+    //DetourUpdateThread(GetCurrentThread());
+    //DetourAttach(&(PVOID&)dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill, My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill);
+    //if (DetourTransactionCommit() == NO_ERROR)
+    //    printf("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured successfully\n");
+    //else
+    //    printf("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured failed\n");
+
+   /* DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)dluaB_dofile, My_luaB_dofile);
+    if (DetourTransactionCommit() == NO_ERROR)
+        printf("DetoursExample dluaB_dofile() detoured successfully\n");
+    else
+        printf("DetoursExample dluaB_dofile() detoured failed\n");*/
+
+    // working fine
+    //DetourTransactionBegin();
+    //DetourUpdateThread(GetCurrentThread());
+    //DetourAttach(&(PVOID&)dlua_pushstring, My_lua_pushstring);
+    //if (DetourTransactionCommit() == NO_ERROR)
+    //    printf("DetoursExample dlua_pushstring() detoured successfully\n");
+    //else
+    //    printf("DetoursExample dlua_pushstring() detoured failed\n");
 
     // Working fine, but this method is called so many times hence it might crash
     // DetourTransactionBegin();

@@ -1,6 +1,12 @@
 # DLLProxyProject
 A skeleton Windows C++ DLL project for proxying
-                             
+
+- https://abda.nl/lumen/
+	- Using this to config IDA to use private Lumina server to recognize function signatures and rename the file to analysis properly, especially for CA.exe file
+	- After configure as suggestion, restart IDA and load the unpacked CA.exe file into IDA then select Lumina -> Pull all metadata , wait for a while for it to apply all the changes and rename the sub_xxx found to new names
+	- We can see a lot of sub_xxx renamed, such as new(uint), lua_xxx (for Lua engine...)
+		- From IDA log we can see: lumina: applied metadata to 934 functions.
+
 - Mysterious CA.exe pointers from DWK.dll                             
     - 0070557c: 00FF9734 => 15 XREFs                                     
     - 00705640:  0080A44Dh => 1 XREF:  ->  FUN_00658d38_CheckTileHasItemToEat DAT_00705640. This 0080A44Dh is a sub routine, need to dive in
@@ -77,7 +83,10 @@ int __thiscall sub_6765E5(_DWORD *this)
 		36		0x24		0xfffffda8
 		40		0x28		0x960
 		44		0x2c		0x708
-		
+
+- https://reverseengineering.stackexchange.com/questions/11811/how-to-organize-vtables-in-ida-pro
+	- Read this to understand how C++ classes layout in memory with single inheritance and multiple inheritant
+
 - How to reconstruct the data type of each offset of an base pointer:
 	- As IDA we are able to use Class Informer plugin to show us Classes it found with the location of the vftable
 		hence if our address is pointing to those vftable address, we know it belongs to that type
@@ -101,6 +110,42 @@ int __thiscall sub_6765E5(_DWORD *this)
 				- .text:00DAA324                     dd offset sub_4609B6 => it seems print out a lot of offsets of CGOAIBattleBomber
 			- 0x2458: Move effect type: 1, 2, 3 (Black effect - Bong' mo` den)
 			- 0x245C: Effect bigger shadow: 0xC8 (Shadow plus)
+- Reconstruct CGOAIBattleBomber
+	- From CGOAIBattleBomber vftable xrefs, we found xrefs_7_sub_86CB1D use this vftable
+		.text:00DAA01C ; class CGOAIBattleBomber: CGOGameBomber, CGOBomber, CGOBomberBase, CGOAvatar, CGameObject, CObject, IEffectRegister, CBombOwner, CObject, IGridBaseBombUseAbleObject, IAIAbleObject, IEatObject, IAbilityObject, IUseAbleSpecialItem, IEventListener;  [MI] (#classinformer)
+		.text:00DAA01C                 dd offset ??_R4CGOAIBattleBomber@@6B@ ; const CGOAIBattleBomber::`RTTI Complete Object Locator'
+		.text:00DAA020 ; const CGOAIBattleBomber::`vftable'
+		.text:00DAA020 ??_7CGOAIBattleBomber@@6B@ dd offset xrefs_9_sub_86E014
+		.text:00DAA020                                         ; DATA XREF: xrefs_7_sub_86CB1D+2A↑o
+	- Navigate to xrefs_7_sub_86CB1D, we found the memory layout of parent vftable of CGOAIBattleBomber are set at specific offets
+
+		.text:0086CB1D xrefs_7_sub_86CB1D proc near            ; CODE XREF: xrefs_1_sub_460304	+7D↑p
+		...
+		.text:0086CB42                 mov     esi, ecx
+		.text:0086CB44                 mov     [ebp+var_10], esi
+		.text:0086CB47                 mov     dword ptr [esi], offset ??_7CGOAIBattleBomber@@6B@ ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB4D                 mov     dword ptr [esi+8], offset ??_7CGOAIBattleBomber@@6B@_0 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB54                 mov     dword ptr [esi+498h], offset ??_7CGOAIBattleBomber@@6B@_1 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB5E                 mov     dword ptr [esi+4A0h], (offset loc_DAA33F+1)
+		.text:0086CB68                 mov     dword ptr [esi+584h], offset ??_7CGOAIBattleBomber@@6B@_2 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB72                 mov     dword ptr [esi+588h], offset ??_7CGOAIBattleBomber@@6B@_3 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB7C                 mov     dword ptr [esi+58Ch], offset ??_7CGOAIBattleBomber@@6B@_4 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB86                 mov     dword ptr [esi+590h], offset ??_7CGOAIBattleBomber@@6B@_5 ; const CGOAIBattleBomber::`vftable'
+		.text:0086CB90                 mov     dword ptr [esi+3104h], offset ??_7CGOAIBattleBomber@@6B@_6 ; const CGOAIBattleBomber::`vftable'
+	- This looks like a constructor, from that we can  tell what are size of each class. To verify if our assumption is correct, let dump the CGOAIBattleBomber then compare those offset if it's same
+		Address		Offset		Value			Pointer To Class
+		0x2cf68e98	0x0000	0xdaa020 -> 	33	M	CGOAIBattleBomber	CGOAIBattleBomber: CGOGameBomber, CGOBomber, CGOBomberBase, CGOAvatar, CGameObject, CObject, IEffectRegister, CBombOwner, CObject, IGridBaseBombUseAbleObject, IAIAbleObject, IEatObject, IAbilityObject, IUseAbleSpecialItem, IEventListener;
+		0x2cf68ea0	0x0008	0xdaa318 -> 	1	M	CGOAIBattleBomber	IEffectRegister: CBombOwner, CObject, IGridBaseBombUseAbleObject, IAIAbleObject, IEatObject, IAbilityObject, IUseAbleSpecialItem, IEventListener;
+		0x2cf69330	0x0498	0xdaa320 -> 	7	M	CGOAIBattleBomber	CBombOwner: CObject, IGridBaseBombUseAbleObject, IAIAbleObject, IEatObject, IAbilityObject, IUseAbleSpecialItem, IEventListener;
+		0x2cf69378	0x04E0	0xbe16020 -> 	*(*0xbe16020) = 0xd9dfd4 -> 	12		CGameContext	CGameContext: CObject;
+		0x2cf6937c	0x04E4	0x33410738 -> 	*(*(*0x33410738)) = 0xd3f2e0 -> 	11	M	CGOGameBomb	CGOGameBomb: CGOBomb, CGameObject, CObject, IEffectRegister, CSensorTrigger, CObject;
+		0x2cf693c0	0x0528	0x2cf6a34c -> 	*(*0x2cf6a34c) = 0xd39e9c -> 	11	M	CGameObject	CGameObject: CObject, IEffectRegister;
+		0x2cf6941c	0x0584	0xdaa418 -> 	44	M	CGOAIBattleBomber	IAIAbleObject: IEatObject, IAbilityObject, IUseAbleSpecialItem, IEventListener;
+		0x2cf69420	0x0588	0xdaa4cc -> 	9	M	CGOAIBattleBomber	IEatObject: IAbilityObject, IUseAbleSpecialItem, IEventListener;
+		0x2cf69424	0x058C	0xdaa4f4 -> 	12	M	CGOAIBattleBomber	IAbilityObject: IUseAbleSpecialItem, IEventListener;
+		0x2cf69428	0x0590	0xdaa554 -> 	29	M	CGOAIBattleBomber	IUseAbleSpecialItem: IEventListener;
+		....
+		0x2cf6bf9c	0x3104	0xdaa5ec -> 	2	M	CGOAIBattleBomber	IEventListener:
 
 - How for find a class layout in memory by scanning vftable
 	- As we know for CA.exe we can reconstruct RTTI table using Class Informer
@@ -119,10 +164,33 @@ int __thiscall sub_6765E5(_DWORD *this)
 	- There are 17 Xrefs to sub_9E3024 hence it looks like sub_9E3024 is a member method of CHackDetector (not virtual method as it does not appear in CHackDetector vftable)
 	- Can hook into sub_9E3024 to see how it react
 
+- Reverse CharTE.idd, Fx.idd, EmoTE.idd, FxAsset.idd
+	- These 4 files looks like encrypted lua files in main Bnb folder and quite heavy size
+	- by searching their name, we found this method sub_9CA901() has logic to load it some how
+		- inside this method, it calls 4 time sub_B1C310() to load each file
+			- xref this method, we found 1 interesting sub_A8216D() method, this in charge of downloading .idd, .idx files, need to reverse this to see how it uncompress the file or encrypt the files
+				- Might hook into CreateFileA method to print out what file name created during this method using detours
+		- we found global dword_1088D50 is being used, check it at runtime (cheat engine) we can tell this is pointing vftable of CPackSysMan
+			.text:01088D50 dword_1088D50   dd 0
+		- Look like CPackSysMan is in charge or packing/unpacking file, chext xref of this dword_1088D50 we found 83 results :D
+- dword_FFB1D8 => maybe global pointer to store luaState structure
+	.text:0057693D                 mov     eax, maybe_luaState_dword_FFB1D8
+	.text:00576942                 push    esi
+	.text:00576943                 push    [ebp+Source]    ; Source
+	.text:00576946                 mov     esi, ecx
+	.text:00576948                 mov     [esi], eax
+	.text:0057694A                 call    xrefs_1_sub_576D44
+	.text:0057694F                 push    [ebp+Source]
+	.text:00576952                 push    dword ptr [esi] ; luaState 
+	.text:00576954                 call    xrefs_114_?lua_pushstring@@YAXPAUlua_State@@PBD@Z
+
 - TODO:
 	- Check CA game in training mode, unlimited shop can be used without reducing, all the item is showing x99
 		- Need to use frida and dump this case to see what kind of player is that, what game mode... and compare with normal game
 	- Write a python/C# program to automate read specific memory from CA, sometime CHeat Engine is detected and game is auto logout
+	- CGridMan::GetSafeDangerGridNum
+		- // #STR: "%s grid %s Get Bomb", "%s grid %s no bomb", "CGridMan::GetSafeDangerGridNum"
+	- Detours CBlackCipher2Client::PushData() method and flushData method to no execute at all (using cove cave technique) to see if still got BlackCipher2_Error01/02 error when attaching with frida
 
 - BNBBotTW version
 	- it create new random folder name at C:\ disk (C:\17a065b64ca0b2f557bfe2e9e4919419), inside will have .exe file and hook.dll file
@@ -152,12 +220,13 @@ int __thiscall sub_6765E5(_DWORD *this)
 			- Packed by Themida too, can follow above steps to unpack successfully
 			- Load into IDA and check the Exports tab, it's actually DWK.dll wrapper as it exports InstallDWK, UninstallDWK...
 			- It's using Borland Delphi compiler (checked with Detect It Easy tool)
-		- bnb-bot.dll
-			- x64 dll file, no packed
-			- Load by IDA64 and it's showing pdb file path that mentions this is a BlackCipher hook bypass "H:\Pascal\lethuyproject\CrazyArcadeBypass\x64\Release\BlackCipherHook_x64.pdb"
 			- TLicenseInfo
 				- This class is in charge of checking license, you can search string "License" and it will lead to this class and logic to check if license expire or not
 				- POST https://wdyl.homes/vibnb/Process.php
+		- bnb-bot.dll
+			- x64 dll file, no packed
+			- Load by IDA64 and it's showing pdb file path that mentions this is a BlackCipher hook bypass "H:\Pascal\lethuyproject\CrazyArcadeBypass\x64\Release\BlackCipherHook_x64.pdb"
+
 			
 		
 New BNB TW Hack Experiement Loaded!
