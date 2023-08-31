@@ -48,6 +48,18 @@
     <ClInclude Include="InGameItemCollector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MyLic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NTPClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileDownloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MyEncryptor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DLLMain.cpp">
@@ -72,6 +84,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="InGameItemCollector.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyLic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MyEncryptor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

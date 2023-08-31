@@ -103,16 +103,19 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(IntDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson</AdditionalIncludeDirectories>
       <OmitFramePointers />
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib;$(IntDir)curl/lib;$(SolutionDir)curl/lib;</AdditionalLibraryDirectories>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
       <GenerateMapFile>true</GenerateMapFile>
       <SubSystem>Windows</SubSystem>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)openssl/lib/libcrypto_static.lib;$(SolutionDir)openssl/lib/libssl_static.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -198,6 +201,8 @@
     <ClCompile Include="GameUtils.cpp" />
     <ClCompile Include="HackModule.cpp" />
     <ClCompile Include="InGameItemCollector.cpp" />
+    <ClCompile Include="MyEncryptor.cpp" />
+    <ClCompile Include="MyLic.cpp" />
     <ClCompile Include="Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -205,11 +210,15 @@
     <ClInclude Include="DLLMain.h" />
     <ClInclude Include="DLLMainEntry.h" />
     <ClInclude Include="exports.h" />
+    <ClInclude Include="FileDownloader.h" />
     <ClInclude Include="GameNotificationService.h" />
     <ClInclude Include="GameSetup.h" />
     <ClInclude Include="GameUtils.h" />
     <ClInclude Include="HackModule.h" />
     <ClInclude Include="InGameItemCollector.h" />
+    <ClInclude Include="MyEncryptor.h" />
+    <ClInclude Include="MyLic.h" />
+    <ClInclude Include="NTPClient.h" />
     <ClInclude Include="TelegramSecret.h" />
     <ClInclude Include="Utils.h" />
   </ItemGroup>

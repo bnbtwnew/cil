@@ -9,16 +9,35 @@
 #include "GameNotificationService.h"
 
 #include "Detours/include/detours.h"
+#include "MyLic.h"
+#include "NTPClient.h"
 
 #pragma comment(lib, "Detours/lib/detours.lib")
 //#pragma comment(lib, "detoured.lib")
 //#pragma comment(lib, "nmco3.lib")
+
+// Remember to add Add CURL_STATICLIB to Properties -> C/C++ -> Proprocessors because we are using staic for libcurl and zlib
+#pragma comment(lib, "Ws2_32.lib")
+#pragma comment(lib, "Normaliz.lib")
+#pragma comment(lib, "Crypt32.lib")
+#pragma comment(lib, "Wldap32.lib")
+#pragma comment(lib, "curl/lib/libcurl.lib")
+#pragma comment(lib, "curl/lib/zlib.lib")
 
 using namespace std;
 
 void DetoursExample();
 
 HackModule::HackModule(HMODULE hModule) : hModule(hModule), _itemCollector(0), _gameSetup(0) {}
+
+DWORD WINAPI StaticInitialiseCheckLicense(PVOID lpParameter) {
+    MyLic lic = MyLic();
+    lic.CheckLicense();
+
+
+    return 0;
+}
+
 
 DWORD WINAPI StaticInitialiseKeyShortcuts(PVOID lpParameter) {
     HackModule* instance = reinterpret_cast<HackModule*>(lpParameter);
@@ -67,6 +86,10 @@ void HackModule::Initialize() {
     //CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseConsoleForDebugging), this, NULL, NULL);
     
     CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseKeyShortcuts), this, NULL, NULL);
+    
+    MyLic lic = MyLic();
+    lic.PersistMachinceIdToFile();
+    CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseCheckLicense), this, NULL, NULL);
 }
 
 void HackModule::Deinitialize() {
@@ -80,6 +103,14 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
     targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);
+
+    //NTPClient ntp = NTPClient("time.nist.gov");
+
+    //std::time_t currentTime = ntp.GetCurrentUTCTime();
+
+    //// Display the current UTC time.
+    //std::cout << "Current UTC Time: " << std::ctime(&currentTime) << std::endl;
+
 
     DetoursExample();
 
