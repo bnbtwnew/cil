@@ -9,6 +9,9 @@
 #include <openssl/aes.h> // OpenSSL for AES decryption
 #include "rapidjson/document.h" // RapidJSON for JSON parsing
 #include "MyEncryptor.h"
+#include "GameUtils.h"
+
+using namespace GameUtils;
 
 class FileDownloader {
 public:
@@ -27,7 +30,7 @@ public:
         // Refer BnBTwBotKeyGen.cpp for logic of encryption
         string fileContentDecryptionKey = _keyHex.substr(32, 32);
         if (!MyEncryptor::DecryptAES(fileContent, decryptedFileContent, fileContentDecryptionKey)) {
-            std::cerr << "Failed to decrypt file the content." << std::endl;
+            log_debug("Failed to decrypt file the content.\n");
             return false;
         }
 
@@ -35,19 +38,19 @@ public:
         rapidjson::Document document;
         document.Parse(decryptedFileContent.c_str());
         if (document.HasParseError()) {
-            std::cerr << "J S O N parse error: " << document.GetParseError() << std::endl;
+            log_debug("J S O N parse error: %s\n", document.GetParseError());
             return false;
         }
 
         // ====================== extract anti-tampering hash and compare if it's tampered ====================== 
         if (!document.HasMember("ta")) {
-            std::cerr << "t.a not exist" << std::endl;
+            log_debug("t.a not exist\n");
             return false;
         }
 
         const rapidjson::Value& ta = document["ta"];
         if (!ta.IsString()) {
-            std::cerr << "t.a is not String" << std::endl;
+            log_debug("t.a is not String\n");
             return false;
         }
 
@@ -58,12 +61,12 @@ public:
 
         // ====================== extract buyer info value ====================== 
         if (!document.HasMember("fi")) {
-            std::cerr << "f.i not exist" << std::endl;
+            log_debug("f.i not exist\n");
             return false;
         }
         const rapidjson::Value& fi = document["fi"];
         if (!fi.IsString()) {
-            std::cerr << "f.i is not String" << std::endl;
+            log_debug("f.i is not String\n");
             return false;
         }
         string encryptedBuyerInfoStr = fi.GetString();
@@ -73,12 +76,12 @@ public:
 
         // ====================== extract expiry time value ====================== 
         if (!document.HasMember("xe")) {
-            std::cerr << "x.e not exist" << std::endl;
+            log_debug("x.e not exist\n");
             return false;
         }
         const rapidjson::Value& xe = document["xe"];
         if (!xe.IsString()) {
-            std::cerr << "x.e is not String" << std::endl;
+            log_debug("x.e is not String\n");
             return false;
         }
         string encryptedExpiryDateStr = xe.GetString();
@@ -91,7 +94,7 @@ public:
         string antitamperingHashedToCompare;
         MyEncryptor::Sha256UsingEVP(combineString, antitamperingHashedToCompare);
         if (decryptedAntitamperingStr.compare(antitamperingHashedToCompare) != 0) {
-            std::cerr << "t.a.m.p.e.r@@@" << std::endl;
+            log_debug("t.a.m.p.e.r@@@\n");
             return false;
         }
 
@@ -99,7 +102,7 @@ public:
         std::string minutesSinceEpochStr;
         string fetchTimeUrl = "https://currentmillis.com/time/minutes-since-unix-epoch.php";
         if (!DownloadFile(fetchTimeUrl, minutesSinceEpochStr)) {
-            std::cerr << "Failed to fetch min@!!." << std::endl;
+            log_debug("Failed to fetch min@!!.\n");
             return false;
         }
 
@@ -108,31 +111,31 @@ public:
             minutesSinceEpochValue = std::stoi(minutesSinceEpochStr);
         }
         catch (const std::invalid_argument) {
-            printf("failed to parse %s\n", minutesSinceEpochStr);
+            log_debug("failed to parse %s\n", minutesSinceEpochStr);
             minutesSinceEpochValue = 0;
         }
-        cout << "fetched min str: " << minutesSinceEpochStr << endl;
-        cout << "fetched min: " << minutesSinceEpochValue << endl;
+        log_debug("fetched min str: %d\n", minutesSinceEpochStr);
+        log_debug("fetched min: %d\n", minutesSinceEpochValue);
 
         // ====================== check expiryDate with remote time if license still valid ======================
         std::tm expiryDateTimeInfo = ParseDateString(decryptedExpiryDateStr);
         if (!expiryDateTimeInfo.tm_year) {
-            std::cerr << "parsing ti failed!!" << endl;
+            log_debug("parsing ti failed!!\n");
             return false;
         }
 
         long long expiryMinutesSinceEpoch = ConvertToMinutesSinceEpoch(expiryDateTimeInfo);
-        cout << "expiry minutes " << expiryMinutesSinceEpoch << endl;
+        log_debug("expiry minutes %ll\n", expiryMinutesSinceEpoch);
 
         if (expiryMinutesSinceEpoch < minutesSinceEpochValue) {
-            cout << "exp already!!" << endl;
+            log_debug("exp already!!\n");
             return false;
         }
 
         // ====================== now enable premium features here ======================
         // we want to do it hear instead of at caller side to prevent method hooking
 
-
+        log_debug("Successfully decrytped!!\n");
         return true;
     }
 
@@ -151,40 +154,73 @@ private:
     std::string _keyHex;
 
     bool DownloadFile(const std::string& url, std::string& content) {
-        CURL* curl;
-        CURLcode res;
+        log_debug("FileDownloader::DownloadFile starting download with url: %s\n", url);
+        CURL* curl = nullptr;
+        CURLcode res = CURLE_OK;
 
-        curl = curl_easy_init();
-        if (curl) {
-            // Set the URL to download.
-            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        try {
 
-            // Set the write callback to collect downloaded data.
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &content);
+            curl = curl_easy_init();
+            if (curl) {
+                // Set the URL to download.
+                curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
 
-            // Perform the HTTP request.
-            res = curl_easy_perform(curl);
+                log_debug("FileDownloader::DownloadFile before  curl_easy_setopt CURLOPT_WRITEFUNCTION\n");
+                // Set the write callback to collect downloaded data.
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &content);
 
-            // Check for errors.
-            if (res != CURLE_OK) {
-                std::cerr << "curl_easy_perform() failed: " << curl_easy_strerror(res) << std::endl;
+                log_debug("FileDownloader::DownloadFile after curl_easy_setopt CURLOPT_WRITEDATA\n");
+
+                // Perform the HTTP request.
+                res = curl_easy_perform(curl);
+
+                log_debug("FileDownloader::DownloadFile after curl_easy_perform()\n");
+
+                // Check for errors.
+                if (res != CURLE_OK) {
+                    log_debug("FileDownloader::DownloadFile curl_easy_perform() failed: %s\n", curl_easy_strerror(res));
+                    return false;
+                }
+
+                // DO NOT call curl_easy_cleanup(curl) here; leave the handle open for reuse
+                log_debug("FileDownloader::DownloadFile before curl_easy_cleanup()\n");
+                // Clean up.
+               /* curl_easy_cleanup(curl);
+                log_debug("FileDownloader::DownloadFile after curl_easy_cleanup()\n");
+                Sleep(2000);*/
+                //curl_global_cleanup();
+                log_debug("FileDownloader::DownloadFile successfully\n");
+                return true;
+            }
+            else {
+                log_debug("FileDownloader::DownloadFile Failed to initialize libcurl.\n");
                 return false;
             }
-
-            // Clean up.
-            curl_easy_cleanup(curl);
-            return true;
         }
-        else {
-            std::cerr << "Failed to initialize libcurl." << std::endl;
+        catch (const std::exception& e) {
+            log_debug("FileDownloader::DownloadFile exception %s\n", e.what());
+            // clean up the libcurl  handle if an exception occurs
+            if (curl) {
+                log_debug("FileDownloader::DownloadFile clean up the libcurl  handle if an exception occurs.\n");
+                curl_easy_cleanup(curl);
+            }
             return false;
         }
+
+        // clean up the libcurl  handle here after all requests are done;
+        if (curl) {
+            log_debug("FileDownloader::DownloadFile clean up the libcurl  handle here after all requests are done.\n");
+            curl_easy_cleanup(curl);
+        }
+        return true;
     }
 
     static size_t WriteCallback(void* contents, size_t size, size_t nmemb, std::string* output) {
+        log_debug("FileDownloader::WriteCallback called...\n");
         size_t totalSize = size * nmemb;
         output->append(static_cast<char*>(contents), totalSize);
+        log_debug("FileDownloader::WriteCallback completed\n");
         return totalSize;
     }
 

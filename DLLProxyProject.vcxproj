@@ -9,6 +9,14 @@
       <Configuration>Release_Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_License|Win32">
+      <Configuration>Release_License</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release_License|x64">
+      <Configuration>Release_License</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -32,6 +40,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -40,6 +55,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -64,6 +86,11 @@
     <GenerateManifest>false</GenerateManifest>
     <OutDir>$(SolutionDir)_build\$(Platform)\$(Configuration)\</OutDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)_build\$(Platform)\$(Configuration)\</OutDir>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Debug|x64'">
     <LinkIncremental>false</LinkIncremental>
     <GenerateManifest>false</GenerateManifest>
@@ -80,6 +107,11 @@
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
     <TargetName>DWK</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|Win32'">
+    <OutDir>$(SolutionDir)_build\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>DWK</TargetName>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -88,11 +120,32 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>
       </SDLCheck>
-      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib;$(IntDir)curl/lib;$(SolutionDir)curl/lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)openssl/lib/libcrypto_static.lib;$(SolutionDir)openssl/lib/libssl_static.lib;</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;LICENSE_BUILD;</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib;$(IntDir)curl/lib;$(SolutionDir)curl/lib;</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)openssl/lib/libcrypto_static.lib;$(SolutionDir)openssl/lib/libssl_static.lib;</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_Debug|Win32'">
@@ -106,7 +159,7 @@
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson</AdditionalIncludeDirectories>
       <OmitFramePointers />
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -119,6 +172,42 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>
+      </SDLCheck>
+      <ExceptionHandling>false</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <EnableParallelCodeGeneration>false</EnableParallelCodeGeneration>
+      <StringPooling>false</StringPooling>
+      <OmitFramePointers>true</OmitFramePointers>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DebugInformationFormat>None</DebugInformationFormat>
+      <RuntimeTypeInfo>
+      </RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateMapFile>true</GenerateMapFile>
+      <EntryPointSymbol>
+      </EntryPointSymbol>
+      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <SubSystem>Windows</SubSystem>
+      <AdditionalOptions>%(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release_License|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Full</Optimization>
@@ -201,6 +290,7 @@
     <ClCompile Include="GameUtils.cpp" />
     <ClCompile Include="HackModule.cpp" />
     <ClCompile Include="InGameItemCollector.cpp" />
+    <ClCompile Include="InGamePlaying.cpp" />
     <ClCompile Include="MyEncryptor.cpp" />
     <ClCompile Include="MyLic.cpp" />
     <ClCompile Include="Utils.cpp" />
@@ -216,6 +306,7 @@
     <ClInclude Include="GameUtils.h" />
     <ClInclude Include="HackModule.h" />
     <ClInclude Include="InGameItemCollector.h" />
+    <ClInclude Include="InGamePlaying.h" />
     <ClInclude Include="MyEncryptor.h" />
     <ClInclude Include="MyLic.h" />
     <ClInclude Include="NTPClient.h" />

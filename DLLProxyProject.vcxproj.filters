@@ -60,6 +60,9 @@
     <ClInclude Include="MyEncryptor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="InGamePlaying.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DLLMain.cpp">
@@ -90,6 +93,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MyEncryptor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="InGamePlaying.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

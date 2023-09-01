@@ -55,20 +55,8 @@ std::string MyLic::GenerateMachineID() {
     std::string machineID = idStream.str();
     printf("machineID before hashing: %s\n", machineID);
 
-    // Hash the machine ID with SHA-256.
-    unsigned char sha256_hash[SHA256_DIGEST_LENGTH];
-    SHA256_CTX sha256;
-    SHA256_Init(&sha256);
-    SHA256_Update(&sha256, machineID.c_str(), machineID.length());
-    SHA256_Final(sha256_hash, &sha256);
-
-    // Convert the hash to a hexadecimal string.
-    std::stringstream sha256_stream;
-    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-        sha256_stream << std::hex << std::setw(2) << std::setfill('0') << (int)sha256_hash[i];
-    }
-
-    string hashedMachineID =  sha256_stream.str();
+    string hashedMachineID;
+    MyEncryptor::Sha256UsingEVP(machineID, hashedMachineID);
     printf("machineID after hashing: %s\n", hashedMachineID);
     return hashedMachineID;
 }
@@ -103,7 +91,7 @@ std::string MyLic::_GetBIOSVersion() {
     // This is a Windows-specific example. You may need to adapt it for other platforms.
     char buffer[256];
     DWORD size = sizeof(buffer);
-    if (GetFirmwareEnvironmentVariable(L"SystemSKU", L"{00000000-0000-0000-0000-000000000000}", buffer, size)) {
+    if (GetFirmwareEnvironmentVariable("SystemSKU", "{00000000-0000-0000-0000-000000000000}", buffer, size)) {
         // Convert the binary data to a string.
         for (DWORD i = 0; i < size; ++i) {
             char hex[3];
@@ -174,7 +162,7 @@ std::string MyLic::_GetHardDiskSerialNumber() {
 
     // This code assumes that the first hard disk is the one you want to retrieve.
     HANDLE hDevice = CreateFile(
-        L"\\\\.\\PhysicalDrive0", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
+        "\\\\.\\PhysicalDrive0", GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
         NULL, OPEN_EXISTING, 0, NULL
     );
 

@@ -380,6 +380,7 @@ namespace GameUtils {
     }
     
     void log_debug(const std::string fmt_str, ...) {        
+//#ifndef LICENSE_BUILD
         int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
         std::unique_ptr<char[]> formatted;
         va_list ap;
@@ -394,13 +395,18 @@ namespace GameUtils {
             else
                 break;
         }
-       
+
         cout << formatted.get();
 
+
+        
+
         // FIXME: << is not working here, compiler error
-        /*ofstream logFile("my_log.txt", std::ios_base::app)
-        logFile << std::string(formatted.get());
-        logFile.close();*/
+        string s = std::string(formatted.get());
+        std::ofstream logFile("my_log.txt", std::ios_base::app);
+        logFile << s; //std::string(formatted.get());
+        logFile.close();
+//#endif // !LICENSE_BUILD
     }
 };
 
