@@ -23,9 +23,9 @@ string MyLic::CheckLicense() {
     stringstream urlStream;
     urlStream << "h"<<"t"<<"t"<<"p"<<"s"<<":"<<"/"<<"/"<<"ra"<<"w.g"<<"ith"<<"ubu"<<"ser"<<"co"<<"nte"<<"nt"<<".c"<<"om"<<"/"<< "bn" << "bt" << "wn" << "ew" << "/c" << "il" << "/ma" << "in/" << hashedMachineId;
     string url = urlStream.str();
-    printf("fetching url: %s\n", url);
+    my_rog_debug1("fetching url: %s\n", url);
     bool result = downloader.DownloadAndDecryptFile(url);
-    printf("check lic result: %d\n", result);
+    my_rog_debug1("check lic result: %d\n", result);
 
     return "";
 }
@@ -53,11 +53,11 @@ std::string MyLic::GenerateMachineID() {
 
     //return idStream.str();
     std::string machineID = idStream.str();
-    printf("machineID before hashing: %s\n", machineID);
+    my_rog_debug1("machineID before hashing: %s\n", machineID);
 
     string hashedMachineID;
     MyEncryptor::Sha256UsingEVP(machineID, hashedMachineID);
-    printf("machineID after hashing: %s\n", hashedMachineID);
+    my_rog_debug1("machineID after hashing: %s\n", hashedMachineID);
     return hashedMachineID;
 }
 

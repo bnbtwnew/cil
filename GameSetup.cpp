@@ -1,5 +1,6 @@
 #include "GameSetup.h"
 #include <stdio.h>
+#include "GameUtils.h"
 
 GameSetup::GameSetup(int targetDllASLR) : targetDllASLR(targetDllASLR) {}
 
@@ -33,7 +34,7 @@ void GameSetup::AddBundleItems() {
     int totalItems = sizeof(itemIds) / sizeof(itemIds[0]);
     int index = 0;
     int successfulAddedItemCount = 0;
-    printf("Start adding bundle of items...\n");
+    my_rog_debug1("Start adding bundle of items...\n");
 
     for (index = 0; index < totalItems; index++) {
         int quantity = itemIds[index];
@@ -43,12 +44,12 @@ void GameSetup::AddBundleItems() {
         }
     }
 
-    printf("Added %d/%d items successfully!\n", successfulAddedItemCount, totalItems);
+    my_rog_debug1("Added %d/%d items successfully!\n", successfulAddedItemCount, totalItems);
 }
 
 int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity) {
-    /*printf("Start adding item... for itemID = %d", itemID);
-    printf("hihi");*/
+    /*my_rog_debug1("Start adding item... for itemID = %d", itemID);
+    my_rog_debug1("hihi");*/
     int result = 0;
     try {
         DWORD bnbAddItemFunctionAddress = 0x79275a;
@@ -71,12 +72,12 @@ int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quan
         //        =============                --> type of the function to call
         //       =========================     --> ... we get a ptr to that fct
         //      =============================  --> ... and we call the function
-        printf("Added item with result: %d\n", result);
+        my_rog_debug1("Added item with result: %d\n", result);
     }
     catch (...) {
-        printf("Added item failed with exception!!!\n");
+        my_rog_debug1("Added item failed with exception!!!\n");
     }
 
-    //printf("========================================\n\n");
+    //my_rog_debug1("========================================\n\n");
     return result;
 }

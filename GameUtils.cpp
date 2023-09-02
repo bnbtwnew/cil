@@ -9,7 +9,38 @@
 #include <tchar.h>
 #include "exports.h"
 
+
+
 using namespace std;
+
+#ifndef LICENSE_BUILD
+void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...) {
+    //#ifndef LICENSE_BUILD
+    int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+    std::unique_ptr<char[]> formatted;
+    va_list ap;
+    while (1) {
+        formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+        strcpy(&formatted[0], fmt_str.c_str());
+        va_start(ap, fmt_str);
+        final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
+        va_end(ap);
+        if (final_n < 0 || final_n >= n)
+            n += abs(final_n - n + 1);
+        else
+            break;
+    }
+
+    std::string log_message = "[" + file + ":" + std::to_string(line) + " (" + function + ")] " + std::string(formatted.get());
+    cout << log_message << endl;
+
+     //std::string(formatted.get());
+    std::ofstream logFile("my_log.txt", std::ios_base::app);
+    logFile << log_message; //std::string(formatted.get());
+    logFile.close();
+    //#endif // !LICENSE_BUILD
+}
+#endif // !LICENSE_BUILD
 
 namespace GameUtils {    
     enum GameState {
@@ -24,7 +55,7 @@ namespace GameUtils {
 
     int GetTargetModuleDllBase() {
         int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-        printf("GameUtils::GetTargetModuleDllBase %s dllBase %x\n", TARGET_MODULE_DLL, dllBase);
+        my_rog_debug1("GameUtils::GetTargetModuleDllBase %s dllBase %x\n", TARGET_MODULE_DLL, dllBase);
         return dllBase;
     }
 
@@ -144,7 +175,7 @@ namespace GameUtils {
             int propertyAddressAtOffset = objectAddress + offset;
             int propertyValueAtOffset = *(int*)propertyAddressAtOffset;
 
-            printf("checking offset %d with propertyValueAtOffset %x\n", offset, propertyValueAtOffset);
+            my_rog_debug1("checking offset %d with propertyValueAtOffset %x\n", offset, propertyValueAtOffset);
 
             // to make sure we have valid access, let assume the value should be at least greater than base image
             if (propertyValueAtOffset < BnBTW_CA_IMAGE_BASE) {
@@ -169,7 +200,7 @@ namespace GameUtils {
             //}
 
         }
-        printf("Done enumerating!!\n");
+        my_rog_debug1("Done enumerating!!\n");
         logfile.close();
     }
 
@@ -197,15 +228,15 @@ namespace GameUtils {
         ecx = *(int*)(ecx + edx);
         edx = 0x001df02c;
         ecx = *(int*)(ecx + edx);
-        log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address ecx = %x\n", ecx);*/
+        my_rog_debug1("GameUtils::sub_658a2c_Retrieve_Object_Address ecx = %x\n", ecx);*/
 
         if (!isGamePlaying()) {
-            log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address this method only can be called when game is playing, otherwise it will crash!!\n");
+            my_rog_debug1("GameUtils::sub_658a2c_Retrieve_Object_Address this method only can be called when game is playing, otherwise it will crash!!\n");
             return 0;
         }
 
         int eax = *(int*)(0x001df02c + *(int*)(0x00006750 + *(int*)0x00ff9734));
-        log_debug("GameUtils::sub_658a2c_Retrieve_Object_Address eax = %x\n", eax);
+        my_rog_debug1("GameUtils::sub_658a2c_Retrieve_Object_Address eax = %x\n", eax);
         return eax;
         //return eax;
     }
@@ -379,34 +410,42 @@ namespace GameUtils {
         return std::string(formatted.get());
     }
     
-    void log_debug(const std::string fmt_str, ...) {        
-//#ifndef LICENSE_BUILD
-        int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
-        std::unique_ptr<char[]> formatted;
-        va_list ap;
-        while (1) {
-            formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
-            strcpy(&formatted[0], fmt_str.c_str());
-            va_start(ap, fmt_str);
-            final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
-            va_end(ap);
-            if (final_n < 0 || final_n >= n)
-                n += abs(final_n - n + 1);
-            else
-                break;
-        }
 
-        cout << formatted.get();
+//#ifdef LICENSE_BUILD
+//    // Define log_debug as an empty macro in release builds
+//#define my_rog_debug1(fmt_str, ...) do {} while (0)
+//#else
+    //void log_debug(const std::string fmt_str, ...) {
+    //    //#ifndef LICENSE_BUILD
+    //    int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
+    //    std::unique_ptr<char[]> formatted;
+    //    va_list ap;
+    //    while (1) {
+    //        formatted.reset(new char[n]); /* Wrap the plain char array into the unique_ptr */
+    //        strcpy(&formatted[0], fmt_str.c_str());
+    //        va_start(ap, fmt_str);
+    //        final_n = vsnprintf(&formatted[0], n, fmt_str.c_str(), ap);
+    //        va_end(ap);
+    //        if (final_n < 0 || final_n >= n)
+    //            n += abs(final_n - n + 1);
+    //        else
+    //            break;
+    //    }
+
+    //    cout << formatted.get();
 
 
-        
 
-        // FIXME: << is not working here, compiler error
-        string s = std::string(formatted.get());
-        std::ofstream logFile("my_log.txt", std::ios_base::app);
-        logFile << s; //std::string(formatted.get());
-        logFile.close();
+
+    //    // FIXME: << is not working here, compiler error
+    //    string s = std::string(formatted.get());
+    //    std::ofstream logFile("my_log.txt", std::ios_base::app);
+    //    logFile << s; //std::string(formatted.get());
+    //    logFile.close();
+    //    //#endif // !LICENSE_BUILD
+    //}
 //#endif // !LICENSE_BUILD
-    }
+
+    
 };
 

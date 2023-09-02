@@ -108,7 +108,7 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     int selectedMoveEffectType = _currentMode;
 
     if (!GameUtils::isGamePlaying()) {
-        log_debug("Game is not playing, hence can not setup effect yet, however mode toggled to %d!!\n", _currentMode);
+        my_rog_debug1("Game is not playing, hence can not setup effect yet, however mode toggled to %d!!\n", _currentMode);
         return;
     }
 
@@ -124,7 +124,7 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     int debug_ecx_ptr_value_after_plus_0x2458 = 0;
     int debug_ecx_ptr_value_after_plus_4 = 0;
 
-    log_debug("InGamePlaying::UpdateMovingEffectAndPlusEffect ecxValue: %x\n", ecxValue);
+    my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect ecxValue: %x\n", ecxValue);
 
     //__asm {
     //    ; now we port logic of sub_00896CA0
@@ -201,7 +201,7 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     //}
 
     if (_yourPlayerIndex < 0 || _yourPlayerIndex > 16) {
-        log_debug("InGamePlaying::UpdateMovingEffectAndPlusEffect _yourPlayerIndex is invalid\n");
+        my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect _yourPlayerIndex is invalid\n");
         return;
     }
 
@@ -228,7 +228,7 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
 
 void InGamePlaying::SetYourPlayerIndex(int index) {
     _yourPlayerIndex = index;
-    log_debug("InGamePlaying::SetYourPlayerIndex index = %d\n", index);
+    my_rog_debug1("InGamePlaying::SetYourPlayerIndex index = %d\n", index);
 }
 
 void InGamePlaying::TogglePlayerMovingEffectMode() {    
@@ -249,5 +249,5 @@ void InGamePlaying::TogglePlayerMovingEffectMode() {
     default:
         break;
     }
-    log_debug("InGamePlaying::ToggleMode _currentMode = %d\n", _currentMode);
+    my_rog_debug1("InGamePlaying::ToggleMode _currentMode = %d\n", _currentMode);
 }

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <sapi.h>
 #include "TelegramSecret.h"
+#include "GameUtils.h"
 using namespace std;
 
 namespace GameNotificationService {
@@ -12,7 +13,7 @@ namespace GameNotificationService {
     void SendNotification(Notification notification) {
         Notification* heapNotification = new Notification();
         heapNotification->content = notification.content;
-        cout << "\n" << "SendNotification content: " << heapNotification->content << "n";        
+        my_rog_debug1("\nSendNotification content: %s\n", heapNotification->content);
         HANDLE hThread = CreateThread(NULL, 0, _AsyncCurlCommand, heapNotification, 0, NULL);
         if (hThread != NULL) {
             // Close the thread handle to free resources (the thread will continue running)
@@ -25,7 +26,7 @@ namespace GameNotificationService {
     void Speak(Notification notification) {
         Notification* heapNotification = new Notification();
         heapNotification->content = notification.content;
-        cout << "\n" << "Speak content: " << heapNotification->content << "n";
+        my_rog_debug1("\nSpeak content: %s\n", heapNotification->content);
         HANDLE hThread = CreateThread(NULL, 0, _AsyncSpeakThread, heapNotification, 0, NULL);
         if (hThread != NULL) {
             // Close the thread handle to free resources (the thread will continue running)
@@ -76,14 +77,14 @@ namespace GameNotificationService {
         HRESULT a = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         if (FAILED(a))
         {
-            cout << "SendNotification ERROR 404 FAILED INITIALIZING COM\n";
+            my_rog_debug1("SendNotification ERROR 404 FAILED INITIALIZING COM\n");
             return 0;           
         }
         //HRESULT CoInitializeEx(LPVOID pvReserved, DWORD dwCoInit);
         HRESULT hr = CoCreateInstance(CLSID_SpVoice, NULL, CLSCTX_ALL, IID_ISpVoice, (void**)&pVoice);
         if (SUCCEEDED(hr))
         {
-            cout << "SendNotification CoCreateInstance succeeded!!!\n";
+            my_rog_debug1("SendNotification CoCreateInstance succeeded!!!\n");
             //getline(wcin, input);
 
             std::wstring stemp = std::wstring(receivedNotification->content.begin(), receivedNotification->content.end());
@@ -93,10 +94,10 @@ namespace GameNotificationService {
             //hr = pVoice->Speak((L"<voice required='Gender = Female;'>" + input).c_str(), 0, NULL);
             pVoice->Release();
             pVoice = NULL;
-            cout << "SendNotification CoCreateInstance succeeded DONE!!!\n";
+            my_rog_debug1("SendNotification CoCreateInstance succeeded DONE!!!\n");
         }
         else {
-            cout << "SendNotification CoCreateInstance failed!!!\n";
+            my_rog_debug1("SendNotification CoCreateInstance failed!!!\n");
         }
 
         return 0;

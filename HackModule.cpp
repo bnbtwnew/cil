@@ -45,8 +45,7 @@ DWORD WINAPI StaticInitialiseKeyShortcuts(PVOID lpParameter) {
     instance->InitialiseKeyShortcuts();
 
     int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-    log_debug("StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
-    printf("printf StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);   
 
     return 0;
 }
@@ -56,8 +55,8 @@ DWORD WINAPI StaticInitialiseConsoleForDebugging(PVOID lpParameter) {
     instance->InitialiseConsoleForDebugging();
 
     int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-    log_debug("StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
-    printf("printf StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("printf StaticInitialiseKeyShortcuts%s base = %x\n", TARGET_MODULE_DLL, dllBase);
 
     return 0;
 }
@@ -72,12 +71,12 @@ void HackModule::Initialize() {
     freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
     freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
 
-    printf("New BNB TW Hack Experiement Loaded! \n");
+    my_rog_debug1("New BNB TW Hack Experiement Loaded! \n");
 
     // Sleep 3 second to wait for modded dll to load so we can get the base
     //Sleep(3000);
     /*int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-    log_debug("HackModule::Initialize %s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("HackModule::Initialize %s base = %x\n", TARGET_MODULE_DLL, dllBase);
      targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
      _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);*/
@@ -100,7 +99,7 @@ void HackModule::Deinitialize() {
 DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
     Sleep(3000);     
     int dllBase = GameUtils::GetTargetModuleDllBase();// (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-    log_debug("HackModule::InitialiseKeyShortcuts %s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("HackModule::InitialiseKeyShortcuts %s base = %x\n", TARGET_MODULE_DLL, dllBase);
     targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);
@@ -126,6 +125,7 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
 #endif // !LICENSE_BUILD        
 
 #ifdef LICENSE_BUILD
+        
         // Add bundle items
         if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x31) & 0x8000) { // Shift 1            
             _gameSetup.AddBundleItems();
@@ -224,40 +224,40 @@ void (*dlua_pushstring)(int*, char*);
 void My_lua_pushstring(int*, char*);
 
 int My_AddItem(DWORD arg0, DWORD itemID, DWORD quantity, DWORD arg3) {
-    printf("My_AddItem reached!!!\n");
+    my_rog_debug1("My_AddItem reached!!!\n");
     int status = My_AddItem(arg0, itemID, quantity, arg3);
-    printf("My_AddItem AddItem = %d\n", status);
+    my_rog_debug1("My_AddItem AddItem = %d\n", status);
     return status;
 }
 
 int My_NMCOGetMyStatus() {
-    printf("My_NMCOGetMyStatus reached!!!\n");
+    my_rog_debug1("My_NMCOGetMyStatus reached!!!\n");
     int status = dNMCOGetMyStatus();
-    printf("My_NMCOGetMyStatus NMCOGetMyStatus = %d\n", status);
+    my_rog_debug1("My_NMCOGetMyStatus NMCOGetMyStatus = %d\n", status);
     return status;
 }
 
 int My_NMCOGetFriendList(int a1, int a2, int a3) {
-    printf("My_NMCOGetFriendList reached!!!\n");
+    my_rog_debug1("My_NMCOGetFriendList reached!!!\n");
     int result = dNMCOGetFriendList(a1, a2, a3);
-    printf("My_NMCOGetFriendList NMCOGetFriendList result = %d\n", result);
+    my_rog_debug1("My_NMCOGetFriendList NMCOGetFriendList result = %d\n", result);
     return result;
 }
 
 int My_NMCOLogin(char* Source, char* a2, char* a3, int a4, int a5, int a6) {
-    printf("My_NMCOLogin reached!!!\n");
+    my_rog_debug1("My_NMCOLogin reached!!!\n");
     int result = dNMCOLogin(Source, a2, a3, a4, a5, a6);
-    printf("My_NMCOLogin NMCOLogin result = %d\n", result);
+    my_rog_debug1("My_NMCOLogin NMCOLogin result = %d\n", result);
     return result;
 }
 
 int __cdecl My_luaL_loadbuffer(int* lua_State, const char* buff, size_t sz, const char* description) {
-    printf("My_luaL_loadbuffer reached with description: %s!!!\n", description);
+    my_rog_debug1("My_luaL_loadbuffer reached with description: %s!!!\n", description);
     /*if (strlen(buff) == 5 && strcmp(buff, "LuaQ") == 0) {
-        printf("\tThis buffer is lua bytes, not file name");
+        my_rog_debug1("\tThis buffer is lua bytes, not file name");
     }
     else {*/
-        printf("\t==> lua file name: %s\n", description);
+        my_rog_debug1("\t==> lua file name: %s\n", description);
         
     //}
 
@@ -266,27 +266,27 @@ int __cdecl My_luaL_loadbuffer(int* lua_State, const char* buff, size_t sz, cons
     outfile.close();
 
     int result = dluaL_LoadBuffer(lua_State, buff, sz, description);
-    printf("My_luaL_loadbuffer result = %d!!!\n", result);
+    my_rog_debug1("My_luaL_loadbuffer result = %d!!!\n", result);
     return result;
 }
 
 int __cdecl  My_luaB_dofile(int* lua_State, const char* fileName) {
-    printf("My_luaB_dofile reached file name: %s!!!\n", fileName);
+    my_rog_debug1("My_luaB_dofile reached file name: %s!!!\n", fileName);
     int result = dluaB_dofile(lua_State, fileName);
-    printf("My_luaB_dofile result = %d!!!\n", result);
+    my_rog_debug1("My_luaB_dofile result = %d!!!\n", result);
     return result;
 }
 
 char My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill(int arg1, int arg2, int* arg3) {
-    printf("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill reached: %d %d!!!\n", arg1, arg2);
+    my_rog_debug1("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill reached: %d %d!!!\n", arg1, arg2);
     char result = dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill(arg1, arg2, arg3);    
-    printf("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill result = %c!!!\n", result);
+    my_rog_debug1("My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill result = %c!!!\n", result);
     return result;
 }
 
 // this working fine, something it's crashing the app, for debugging purpose to see what function Lua is using in our app
 void __cdecl My_lua_pushstring(int* lua_state, char* name) {
-    printf("My_lua_pushstring reached with name: %s\n", name);
+    my_rog_debug1("My_lua_pushstring reached with name: %s\n", name);
     //lua_pushstring_logfile(lua_state, name);
     std::ofstream logfile(".\\lua_dumped\\pushstring.txt", std::ios_base::app);
     logfile << name << "\n";
@@ -297,7 +297,7 @@ void __cdecl My_lua_pushstring(int* lua_state, char* name) {
 //ShowWindowType OriginalShowWindow = nullptr;
 //BOOL WINAPI HookedShowWindow(CWnd* pWnd, int nCmdShow) {
 //    WINAPI result = OriginalShowWindow(pWnd, nCmdShow);
-//    printf("HookedShowWindow nCmdShow = %d result = %d\n", nCmdShow, result);
+//    my_rog_debug1("HookedShowWindow nCmdShow = %d result = %d\n", nCmdShow, result);
 //
 //    // Call the original ShowWindow function
 //    return result;
@@ -305,7 +305,7 @@ void __cdecl My_lua_pushstring(int* lua_state, char* name) {
 
 VOID DetoursExample() {
     int dllBase = (int)GetModuleHandle(_T("nmco3.dll"));
-    log_debug("HackModule::InitialiseConsoleForDebugging %s base = %x\n", "nmco3.dll", dllBase);
+    my_rog_debug1("HackModule::InitialiseConsoleForDebugging %s base = %x\n", "nmco3.dll", dllBase);
     int nmco3ASLR = dllBase - 0x10001000;//TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     int NMCOGetMyStatusAddress = nmco3ASLR + 0x10010B10;
     dNMCOGetMyStatus = (int(*)())NMCOGetMyStatusAddress;
@@ -330,60 +330,60 @@ VOID DetoursExample() {
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)dNMCOGetMyStatus, My_NMCOGetMyStatus);
     if (DetourTransactionCommit() == NO_ERROR)
-        printf("DetoursExample NMCOGetMyStatus() detoured successfully\n");
+        my_rog_debug1("DetoursExample NMCOGetMyStatus() detoured successfully\n");
     else 
-        printf("DetoursExample NMCOGetMyStatus() detoured failed\n");
+        my_rog_debug1("DetoursExample NMCOGetMyStatus() detoured failed\n");
 
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)dNMCOGetFriendList, My_NMCOGetFriendList);
     if (DetourTransactionCommit() == NO_ERROR)
-        printf("DetoursExample NMCOGetFriendList() detoured successfully\n");
+        my_rog_debug1("DetoursExample NMCOGetFriendList() detoured successfully\n");
     else 
-        printf("DetoursExample NMCOGetFriendList() detoured failed\n");*/
+        my_rog_debug1("DetoursExample NMCOGetFriendList() detoured failed\n");*/
 
     // this one workingn fine, able to dump lua file plain text, not compiled one
     /*DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)dluaL_LoadBuffer, My_luaL_loadbuffer);
     if (DetourTransactionCommit() == NO_ERROR)
-        printf("DetoursExample dluaL_LoadBuffer() detoured successfully\n");
+        my_rog_debug1("DetoursExample dluaL_LoadBuffer() detoured successfully\n");
     else
-        printf("DetoursExample dluaL_LoadBuffer() detoured failed\n");*/
+        my_rog_debug1("DetoursExample dluaL_LoadBuffer() detoured failed\n");*/
 
     //DetourTransactionBegin();
     //DetourUpdateThread(GetCurrentThread());
     //DetourAttach(&(PVOID&)dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill, My_xrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill);
     //if (DetourTransactionCommit() == NO_ERROR)
-    //    printf("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured successfully\n");
+    //    my_rog_debug1("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured successfully\n");
     //else
-    //    printf("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured failed\n");
+    //    my_rog_debug1("DetoursExample dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill() detoured failed\n");
 
    /* DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&)dluaB_dofile, My_luaB_dofile);
     if (DetourTransactionCommit() == NO_ERROR)
-        printf("DetoursExample dluaB_dofile() detoured successfully\n");
+        my_rog_debug1("DetoursExample dluaB_dofile() detoured successfully\n");
     else
-        printf("DetoursExample dluaB_dofile() detoured failed\n");*/
+        my_rog_debug1("DetoursExample dluaB_dofile() detoured failed\n");*/
 
     // working fine
     //DetourTransactionBegin();
     //DetourUpdateThread(GetCurrentThread());
     //DetourAttach(&(PVOID&)dlua_pushstring, My_lua_pushstring);
     //if (DetourTransactionCommit() == NO_ERROR)
-    //    printf("DetoursExample dlua_pushstring() detoured successfully\n");
+    //    my_rog_debug1("DetoursExample dlua_pushstring() detoured successfully\n");
     //else
-    //    printf("DetoursExample dlua_pushstring() detoured failed\n");
+    //    my_rog_debug1("DetoursExample dlua_pushstring() detoured failed\n");
 
     // Working fine, but this method is called so many times hence it might crash
     // DetourTransactionBegin();
     // DetourUpdateThread(GetCurrentThread());
     // DetourAttach(&(PVOID&)dAddItem, My_AddItem);
     // if (DetourTransactionCommit() == NO_ERROR)
-    //     printf("DetoursExample AddItem() detoured successfully\n");
+    //     my_rog_debug1("DetoursExample AddItem() detoured successfully\n");
     // else
-    //     printf("DetoursExample AddItem() detoured failed\n");
+    //     my_rog_debug1("DetoursExample AddItem() detoured failed\n");
 
     /*OriginalShowWindow = (ShowWindowType)GetVTableFunctionAddress(&CWnd::ShowWindow);
     if (OriginalShowWindow) {
@@ -393,9 +393,9 @@ VOID DetoursExample() {
         result |= DetourTransactionCommit();
 
         if (result == NO_ERROR) {
-            printf("DetoursExample CWnd::ShowWindow() detoured successfully\n");
+            my_rog_debug1("DetoursExample CWnd::ShowWindow() detoured successfully\n");
         } else {
-            printf("DetoursExample CWnd::ShowWindow() detoured failed\n");
+            my_rog_debug1("DetoursExample CWnd::ShowWindow() detoured failed\n");
         }
     }*/
     
@@ -403,7 +403,7 @@ VOID DetoursExample() {
 
 DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
     Sleep(3000);
-    log_debug("HackModule::InitialiseWatchdogTimerThread... \n");
+    my_rog_debug1("HackModule::InitialiseWatchdogTimerThread... \n");
     while (true)
     {
 #ifdef LICENSE_BUILD
@@ -416,13 +416,15 @@ DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
 
 DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
 {
+#ifndef LICENSE_BUILD
+
     // Sleep 3 seconds to wait for target module dll loaded
     Sleep(3000);
 
     //DetoursExample();
 
     int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-    log_debug("HackModule::InitialiseConsoleForDebugging %s base = %x\n", TARGET_MODULE_DLL, dllBase);
+    my_rog_debug1("HackModule::InitialiseConsoleForDebugging %s base = %x\n", TARGET_MODULE_DLL, dllBase);
     targetDllASLR = dllBase - TARGET_MODULE_DLL_STATIC_BASE_ADDRESS;
     _itemCollector.UpdateDllASLR(targetDllASLR);
     _gameSetup.UpdateDllASLR(targetDllASLR);    
@@ -456,33 +458,33 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
     //    //cin.clear();
     //    AddItem(itemID, firstArg, fourthArg, quantity);
     //    
-    //    //printf("Sleeping for 4secs.. \n");
+    //    //my_rog_debug1("Sleeping for 4secs.. \n");
     //    //Sleep(4000);
-    //    //printf("Slept for 4secs. \n");
+    //    //my_rog_debug1("Slept for 4secs. \n");
     //} while (itemID != 0);
 
 
     int selection = -1;
     do {
-        cout << "New BnB Hack Experiment: \n";
-        cout << "\t1. Add a whole bundle of items\n";
-        cout << "\t2. Trigger An Full\n";
-        cout << "\t3. Trigger Start Game\n";
-        cout << "\t4. Toggle Radar\n";
-        cout << "\t5. Toggle Checkbox\n";
-        cout << "\t6. An Full TOP_LEFT\n";
-        cout << "\t7. Check Game State\n";
-        cout << "\t8. Collect favorite items\n";
-        cout << "\t9. Find item by ID\n";
-        cout << "\t10. Add Item by ID\n";
-        cout << "\t11. Find all valid Items ID\n";
-        cout << "\t12. Experiment Mua Nhanh \n";
-        cout << "\t13. Bong mo den \n";
-        cout << "\t14. Retrieve username \n";        
-        cout << "\t15. Enumerate pointers for Object at address\n";
-        cout << "\t0. Exit\n";
-        cout << "\n";
-        cout << "Enter option: ";
+        my_rog_debug1("New BnB Hack Experiment: \n");
+        my_rog_debug1("\t1. Add a whole bundle of items\n");
+        my_rog_debug1("\t2. Trigger An Full\n");
+        my_rog_debug1("\t3. Trigger Start Game\n");
+        my_rog_debug1("\t4. Toggle Radar\n");
+        my_rog_debug1("\t5. Toggle Checkbox\n");
+        my_rog_debug1("\t6. An Full TOP_LEFT\n");
+        my_rog_debug1("\t7. Check Game State\n");
+        my_rog_debug1("\t8. Collect favorite items\n");
+        my_rog_debug1("\t9. Find item by ID\n");
+        my_rog_debug1("\t10. Add Item by ID\n");
+        my_rog_debug1("\t11. Find all valid Items ID\n");
+        my_rog_debug1("\t12. Experiment Mua Nhanh \n");
+        my_rog_debug1("\t13. Bong mo den \n");
+        my_rog_debug1("\t14. Retrieve username \n");
+        my_rog_debug1("\t15. Enumerate pointers for Object at address\n");
+        my_rog_debug1("\t0. Exit\n");
+        my_rog_debug1("\n");
+        my_rog_debug1("Enter option: ");
         cin.clear();
         cin >> selection;
 
@@ -523,7 +525,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
         case 7:
         {
             int gameState = GameUtils::GetGameState();
-            log_debug("HackModule::InitialiseConsoleForDebugging gameState = %x\n", gameState);
+            my_rog_debug1("HackModule::InitialiseConsoleForDebugging gameState = %x\n", gameState);
             // for debugging purpose
             GameUtils::sub_658a2c_Retrieve_Object_Address_When_GameIsPlaying();
             break;
@@ -537,7 +539,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
         {
             // CA.exe int sub_9a723b(int itemID, int inoutArg1, int inoutArg2, int inoutArg3)
             int itemID = 0;
-            cout << "Enter ItemID to looking for: ";
+            my_rog_debug1("Enter ItemID to looking for: ");
             cin.clear();
             cin >> itemID;
 
@@ -546,8 +548,8 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             DWORD* inoutArg3 = 0;
             int* FF9498 = (int*)0xFF9498;
             int FF9498_Value = *FF9498;
-            printf("0xFF9498 = %x\n", FF9498_Value);
-            printf("Entered ItemID: %d\n", itemID);
+            my_rog_debug1("0xFF9498 = %x\n", FF9498_Value);
+            my_rog_debug1("Entered ItemID: %d\n", itemID);
             int result = -1;
             /*
             Hook called from:
@@ -591,7 +593,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             };*/
 
             //int result = ((int (*)(int))0x9a7334)(itemID);
-            printf("Result: %d\n", result);
+            my_rog_debug1("Result: %d\n", result);
             break;
         }
         case 10:
@@ -601,7 +603,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             DWORD fourthArg = 0;
             DWORD quantity = 0;
             do {
-                cout << "Enter Item ID to add: ";
+                my_rog_debug1("Enter Item ID to add: ");
                 cin.clear();
                 //cin.ignore(99999999, '\n');
                 cin >> itemID;
@@ -610,9 +612,9 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
                 //cin.clear();
                 _gameSetup.AddItem(itemID, firstArg, fourthArg, quantity);
         
-                //printf("Sleeping for 4secs.. \n");
+                //my_rog_debug1("Sleeping for 4secs.. \n");
                 //Sleep(4000);
-                //printf("Slept for 4secs. \n");
+                //my_rog_debug1("Slept for 4secs. \n");
             } while (itemID != 0);
             break;
         }
@@ -620,7 +622,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
         {
             /*int* FF9498 = (int*)0xFF9498;
             int FF9498_Value = *FF9498;
-            printf("0xFF9498 = %x\n", FF9498_Value);                        */
+            my_rog_debug1("0xFF9498 = %x\n", FF9498_Value);                        */
             /*
             Hook called from:
                 0x9a45b0
@@ -660,10 +662,10 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
 
                 if (result > 0) { // valid item ID                    
                     logfile << itemID << "\n";
-                    printf("Found valid item id: %d\n", itemID);
+                    my_rog_debug1("Found valid item id: %d\n", itemID);
                 }
             }
-            printf("Done!\n");
+            my_rog_debug1("Done!\n");
             logfile.close();
             break;
         }
@@ -683,7 +685,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
                 int eax = *(int*)(0x000000d0 + *(int*)0x00ff9458);
 
                 int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));
-                //    printf("%s base = %x", TARGET_MODULE_DLL, dllBase);
+                //    my_rog_debug1("%s base = %x", TARGET_MODULE_DLL, dllBase);
                 DWORD tform1Address = (dllBase + 0x699390); //0x690000;
 
                 try {
@@ -700,12 +702,12 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
 
                     int** checkboxPtr = (int**)(tform1Address + 0x4A0);
                     int* setSelectedFunctionPointer = (int*)(*checkboxPtr + 0x10c);
-                    printf("Checkbox ptr: %x setSelected ptr: %x\n", *checkboxPtr, setSelectedFunctionPointer);
+                    my_rog_debug1("Checkbox ptr: %x setSelected ptr: %x\n", *checkboxPtr, setSelectedFunctionPointer);
                     int* eaxValue = *checkboxPtr;
 
                     BYTE currentCheckState = *(char*)(eaxValue + 0x29A);
                     BYTE newCheckState = 1 - currentCheckState;
-                    printf("Before checkbox state: %d, After state: %d\n", currentCheckState, newCheckState);
+                    my_rog_debug1("Before checkbox state: %d, After state: %d\n", currentCheckState, newCheckState);
 
                     BOOL toggleOn = newCheckState == 1;
         
@@ -728,10 +730,10 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
                     // After the call, somehow the check state does not persist, hence we need to manually set value for it
                     char* newCheckStatePtr = (char*)(eaxValue + 0x29A); // 00599250        cmp         dl,byte ptr [ebx+29A];TCheckBox.FState:TCheckBoxState
                     *newCheckStatePtr = newCheckState;
-                    printf("New check state memory read: %d\n", *newCheckStatePtr);
+                    my_rog_debug1("New check state memory read: %d\n", *newCheckStatePtr);
                 }
                 catch (...) {
-                    printf("Toggle checkbox failed with exception!!!\n");
+                    my_rog_debug1("Toggle checkbox failed with exception!!!\n");
                 }
             }
             break;
@@ -751,7 +753,7 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             
             int nmco3BaseAddress = 0x10000000;
             char* username = (char*)(nmco3BaseAddress + 0x4C510);
-            printf("username: %s", username);
+            my_rog_debug1("username: %s", username);
             break;
         }        
         case 15: {
@@ -759,14 +761,16 @@ DWORD WINAPI HackModule::InitialiseConsoleForDebugging()
             break;
         }
         default:
-            printf("Invalid option!\n");
+            my_rog_debug1("Invalid option!\n");
             break;
         }
 
         cout << "\n";
     } while (selection != 0);
 
-    printf("Exiting...");
+    my_rog_debug1("Exiting...");
+#endif // !LICENSE_BUILD
+
     return 0;
 }
 

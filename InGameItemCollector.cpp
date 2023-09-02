@@ -13,16 +13,16 @@ void InGameItemCollector::UpdateDllASLR(int aslrOffset) {
 void InGameItemCollector::CollectFavouriteItems() {
     int isPlaying = GameUtils::isGamePlaying();
     if (!isPlaying) {
-        log_debug("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
+        my_rog_debug1("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
         return;
     }
 
     // FIXME: Add another check to prevent spamming collect in a short amount of time that can cause crashing, maybe only allow to collect again after 3 seconds
     std::chrono::steady_clock::time_point currentTimepoint = std::chrono::steady_clock::now();
     long long secondsElapsed = (std::chrono::duration_cast<std::chrono::microseconds>(currentTimepoint - _lastCollectedFavoriteItemsTimePoint).count()) / 1000000;
-    log_debug("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
+    my_rog_debug1("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
     if (secondsElapsed < 5) {
-        log_debug("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
+        my_rog_debug1("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
         return;
     }
 
@@ -43,7 +43,7 @@ void InGameItemCollector::CollectFavouriteItems() {
             {
                 GameUtils::MapPoint point(column, row);
                 if (!GameUtils::HasItemAtTile(targetDllASLR, point)) {
-                    log_debug("CollectFavouriteInGameItems HasItemAtTile (%d, %d) is false\n", point.column, point.row);
+                    my_rog_debug1("CollectFavouriteInGameItems HasItemAtTile (%d, %d) is false\n", point.column, point.row);
                     //myPrintf(string_format("CollectFavouriteInGameItems HasItemAtTile (%d, %d) is false\n", column, row));
                     continue;
                 }
@@ -60,15 +60,15 @@ void InGameItemCollector::CollectFavouriteItems() {
                     }
 
                     if (currentItemID == favoriteItems[i]) {
-                        log_debug("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row);                                                
+                        my_rog_debug1("CollectFavouriteInGameItems found favorite item id %d at (%d, %d)\n", currentItemID, column, row);                                                
                         int mysteriousNumber = GetMysteriousNumber(targetDllASLR, point, currentItemID);
-                        log_debug("CollectFavouriteInGameItems mysteriousNumber %d at (%d, %d)\n", mysteriousNumber, column, row);
+                        my_rog_debug1("CollectFavouriteInGameItems mysteriousNumber %d at (%d, %d)\n", mysteriousNumber, column, row);
 
                         CollectItemAtTile(point, currentItemID, mysteriousNumber);
 
                         // we only want to collect one, not all item of the same kind, hence set invalid item id to not collect again
                         favoriteItems[i] = REMOVED_ITEM_ID;
-                        log_debug("CollectFavouriteInGameItems removed ItemID %d from favorites!\n", favoriteItems[i]);
+                        my_rog_debug1("CollectFavouriteInGameItems removed ItemID %d from favorites!\n", favoriteItems[i]);
                     }
                 }                
 
@@ -76,7 +76,7 @@ void InGameItemCollector::CollectFavouriteItems() {
         }
     }
     catch (...) {
-        log_debug("CollectFavouriteInGameItems exception!!!\n");
+        my_rog_debug1("CollectFavouriteInGameItems exception!!!\n");
     }
 
     // collected successfully, update time point
@@ -98,26 +98,26 @@ void InGameItemCollector::CollectFavouriteItems() {
             
             GameNotificationService::Speak(foundFastTurtleNotification);
             GameNotificationService::SendNotification(foundFastTurtleNotification);
-            log_debug("CollectFavouriteInGameItems Found fast turtle and sent notification with messagge %s\n", message);
+            my_rog_debug1("CollectFavouriteInGameItems Found fast turtle and sent notification with messagge %s\n", message);
         }
     }
 
-    printf("\n\n");
+    my_rog_debug1("\n\n");
 }
 
 void InGameItemCollector::CollectFavouriteItemsAssemblyVersion() {
     int isPlaying = GameUtils::isGamePlaying();
     if (!isPlaying) {
-        log_debug("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
+        my_rog_debug1("InGameItemCollector::CollectFavouriteItems game has not started yet!!! isPlaying = %d\n", isPlaying);
         return;
     }
 
     // FIXME: Add another check to prevent spamming collect in a short amount of time that can cause crashing, maybe only allow to collect again after 3 seconds
     std::chrono::steady_clock::time_point currentTimepoint = std::chrono::steady_clock::now();
     long long secondsElapsed = (std::chrono::duration_cast<std::chrono::microseconds>(currentTimepoint - _lastCollectedFavoriteItemsTimePoint).count()) / 1000000;
-    log_debug("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
+    my_rog_debug1("InGameItemCollector::CollectFavouriteItems %d seconds elapsed\n", secondsElapsed);
     if (secondsElapsed < 5) {
-        log_debug("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
+        my_rog_debug1("InGameItemCollector::CollectFavouriteItems You can not collect again in less than 3 seconds!!\n");
         return;
     }
 
@@ -238,10 +238,10 @@ void InGameItemCollector::CollectItemAtTile(MapPoint point) {
             mov eax, point.column; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
             call _0x0065ADD0WithASLR; 006ED8C3        call        0065ADD0
         }
-        log_debug("(%d, %d) Found ItemID %d with mysteriousNumber %d\n", point.column, point.row, itemID, mysteriousNumber);
+        my_rog_debug1("(%d, %d) Found ItemID %d with mysteriousNumber %d\n", point.column, point.row, itemID, mysteriousNumber);
     }
     catch (...) {
-        log_debug("CollectItemAtTile (%d, %d) failed with exception!!!\n", point.column, point.row);
+        my_rog_debug1("CollectItemAtTile (%d, %d) failed with exception!!!\n", point.column, point.row);
     }
 }
 
@@ -259,9 +259,9 @@ void InGameItemCollector::CollectItemAtTile(MapPoint point, int itemID, int myst
             mov eax, point.column; 006ED8C0        mov         eax, dword ptr[ebp - 0C]
             call _0x0065ADD0WithASLR; 006ED8C3        call        0065ADD0
         }
-        log_debug("CollectItemAtTile (%d, %d) Found ItemID %d with mysteriousNumber %d\n", point.column, point.row, itemID, mysteriousNumber);        
+        my_rog_debug1("CollectItemAtTile (%d, %d) Found ItemID %d with mysteriousNumber %d\n", point.column, point.row, itemID, mysteriousNumber);        
     }
     catch (...) {
-        log_debug("CollectItemAtTile (%d, %d) failed with exception!!!\n", point.column, point.row);        
+        my_rog_debug1("CollectItemAtTile (%d, %d) failed with exception!!!\n", point.column, point.row);        
     }
 }
