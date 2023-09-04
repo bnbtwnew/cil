@@ -24,12 +24,14 @@ public:
     void UpdateDllASLR(int aslrOffset);
     void CollectFavouriteItems();
     void CollectFavouriteItemsAssemblyVersion();
+    void CheckFastTurtles();
 
 private:
     int targetDllASLR;    
     std::chrono::steady_clock::time_point _lastCollectedFavoriteItemsTimePoint = std::chrono::steady_clock::now();
     void CollectItemAtTile(MapPoint point);
     void CollectItemAtTile(MapPoint point, int itemID, int mysteriousNumber);
+    bool _checkingFastTurtlesDone = true;
     //void AnFullToSection(int fromColumn, int toColumn, int fromRow, int toRow);
     //void AnFullAtDirection(int targetDllASLR, Direction direction);
 };

@@ -177,15 +177,16 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
         }
         else {
             if (_escapseKeyReleased) {
-                _itemCollector.CollectFavouriteItemsAssemblyVersion();
+                //_itemCollector.CollectFavouriteItemsAssemblyVersion();
                 //_itemCollector.CollectFavouriteItems();
+                
+                // this seems working, sometime crashing
+                _itemCollector.CheckFastTurtles();
                 _escapseKeyReleased = false;
             }
         }
 #endif // !LICENSE_BUILD        
-
-#ifdef LICENSE_BUILD
-        
+    
         // Add bundle items
         if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x31) & 0x8000) { // Shift 1            
             _gameSetup.AddBundleItems();
@@ -237,7 +238,6 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
             _inGamePlaying.SetYourPlayerIndex(7);
             PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
-#endif // LICENSE_BUILD
 
         
         
@@ -491,7 +491,7 @@ DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
             previousGameState = currentGameState;
         }
 
-
+        //_itemCollector.CheckFastTurtles();
 
         Sleep(1000);
     }

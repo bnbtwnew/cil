@@ -27,7 +27,7 @@ void InGameItemCollector::CollectFavouriteItems() {
     }
 
     int REMOVED_ITEM_ID = -1;
-    int favoriteItems[] = { IN_GAME_ITEM_MAX_WATER, IN_GAME_ITEM_NEEDLE };
+    int favoriteItems[] = { IN_GAME_ITEM_NEEDLE };
     int totalItems = sizeof(favoriteItems) / sizeof(favoriteItems[0]);
     int counter = 0;
     int totalTurtles = 0;
@@ -264,4 +264,73 @@ void InGameItemCollector::CollectItemAtTile(MapPoint point, int itemID, int myst
     catch (...) {
         my_rog_debug1("CollectItemAtTile (%d, %d) failed with exception!!!\n", point.column, point.row);        
     }
+}
+
+void InGameItemCollector::CheckFastTurtles() {
+    int isPlaying = GameUtils::isGamePlaying();
+    if (!isPlaying) {
+        my_rog_debug1("InGameItemCollector::CheckFastTurtles game has not started yet!!! isPlaying = %d\n", isPlaying);
+        return;
+    }
+    if (!_checkingFastTurtlesDone) {
+        return;
+    }
+    _checkingFastTurtlesDone = false;
+    
+    int counter = 0;
+    int totalTurtles = 0;
+
+    int fastTurtleColumn = -1;
+    int fastTurtleRow = -1;
+    GameNotificationService::Notification foundFastTurtleNotification;
+
+    try {
+        for (int row = 0; row < MAX_GAME_MAP_ROW; row++)
+        {
+            for (int column = 0; column < MAX_GAME_MAP_COLUMN; column++)
+            {
+                GameUtils::MapPoint point(column, row);
+                if (!GameUtils::HasItemAtTile(targetDllASLR, point)) {
+                    //my_rog_debug1("HasItemAtTile (%d, %d) is false\n", point.column, point.row);                    
+                    continue;
+                }
+                int currentItemID = GetItemID(targetDllASLR, point);
+                if (currentItemID == IN_GAME_ITEM_FAST_TURTLE) {
+                    totalTurtles++;
+                    fastTurtleColumn = column;
+                    fastTurtleRow = row;                    
+                }
+
+                if (currentItemID == IN_GAME_ITEM_SLOW_TURTLE) {
+                    totalTurtles++;
+                }                                    
+
+            }
+        }
+    }
+    catch (...) {
+        my_rog_debug1("CheckFastTurtles exception!!!\n");
+    }
+
+    // logic to send telegram notification if found fast turtle
+    if (totalTurtles > 0) {
+
+        std::string message = "";
+        if (fastTurtleColumn >= 0) { // has fast turtle
+            if (totalTurtles == 1) { // only one turtle and it's fast one
+                message = "Fast turtle!!!";
+            }
+            else {
+                message = FormatString("Fast turtle at %d %d", fastTurtleColumn + 1, fastTurtleRow + 1);
+            }
+
+            foundFastTurtleNotification.content = message;
+
+            GameNotificationService::Speak(foundFastTurtleNotification);
+            //GameNotificationService::SendNotification(foundFastTurtleNotification);
+            my_rog_debug1("Found fast turtle and sent notification with messagge %s\n", message);
+        }
+    }
+
+    _checkingFastTurtlesDone = true;
 }

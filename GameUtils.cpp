@@ -167,7 +167,7 @@ namespace GameUtils {
             mov edx, point.row; 006ED89F        mov         edx, dword ptr[ebp - 10]
             mov eax, point.column; 006ED8A2        mov         eax, dword ptr[ebp - 0C]
             call _0x00658D38WithASLR; 006ED8A5        call        00658D38
-            push eax; 006ED8AA        push        eax
+            ; push eax; 006ED8AA        push        eax
             ; this line is for debugging purpose
             mov mapItemID, eax
         }
