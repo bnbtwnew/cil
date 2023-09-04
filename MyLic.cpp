@@ -10,11 +10,14 @@
 #include <tchar.h>
 #include <iphlpapi.h>
 #include "FileDownloader.h"
+#include "LicenseFeaturesStatus.h"
+#include "ThemidaSDK.h"
 using namespace std;
 
 #pragma comment(lib, "Iphlpapi.lib")
 
 string MyLic::CheckLicense() {
+    VM_TIGER_BLACK_START
     // 0. Generate machine id hashed as the key
     string hashedMachineId = GenerateMachineID();
 
@@ -25,18 +28,35 @@ string MyLic::CheckLicense() {
     string url = urlStream.str();
     my_rog_debug1("fetching url: %s\n", url);
     bool result = downloader.DownloadAndDecryptFile(url);
-    my_rog_debug1("check lic result: %d\n", result);
+    int integrity = 10000;
+    CHECK_CODE_INTEGRITY(integrity, 20000);
+    if (integrity != 20000) {
+        // Application code is patched!
+        // then we set licensed to false due to app is patched
+        GenerateAddingBundleItemsLicensedCode((1000 + 1 - 335  + 4) > 900990);
+        GenerateMovingEffectCode((2000 + 2 - 235 + 9) > 990990);
+        my_rog_debug1("Application code is patched! resut: %d\n", result);
+    }
+    else {
+        my_rog_debug1("check lic result: %d\n", result);
+        GenerateAddingBundleItemsLicensedCode((1000 + 1 - 335 + 4) < 900990);
+        GenerateMovingEffectCode((2000 + 2 - 235 + 9) < 990990);
+    }
+    
+    VM_TIGER_BLACK_END
 
     return "";
 }
 
 void MyLic::PersistMachinceIdToFile() {
+    VM_TIGER_BLACK_START
     string machineID = GenerateMachineID();
     stringstream fileNameStream;
     fileNameStream << "li" << "ce" << "n" << "se" << ".t" << "xt";
     std::ofstream outfile(fileNameStream.str(), std::ofstream::binary);
     outfile << machineID;
     outfile.close();
+    VM_TIGER_BLACK_END
 }
 
     // Generate a machine-unique ID based on system properties.

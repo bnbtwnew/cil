@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "InGamePlaying.h"
 
 // https://stackoverflow.com/questions/44317362/remove-debug-strings-in-release-build
 //#ifdef _DEBUG
@@ -14,11 +15,12 @@
 
 #ifdef LICENSE_BUILD
 // Define log_debug as an empty macro in release builds
-#define my_rog_debug1(fmt_str, ...) do {} while (0)
+void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...);
+#define my_rog_debug1(fmt_str, ...) my_rog_debug1_impl(__FILE__, __LINE__, __FUNCTION__, fmt_str, ##__VA_ARGS__)
+//#define my_rog_debug1(fmt_str, ...) do {} while (0)
 #else
 void my_rog_debug1_impl(const std::string & file, int line, const std::string & function, const std::string fmt_str, ...);
 #define my_rog_debug1(fmt_str, ...) my_rog_debug1_impl(__FILE__, __LINE__, __FUNCTION__, fmt_str, ##__VA_ARGS__)
-//void my_rog_debug1(const std::string fmt_str, ...);
 #endif // !LICENSE_BUILD
 
 namespace GameUtils {
@@ -38,6 +40,22 @@ namespace GameUtils {
 
 	} MapPoint;
 
+	enum GameState {
+		GAME_STATE_NOT_LAUNCHED = 0,
+		GAME_STATE_LOGIN_SCREEN = 1,
+		GAME_STATE_LOGIN_LOADING = 0x17,
+		GAME_STATE_WAITING_AT_LOBBY = 0xB,
+		GAME_STATE_WAITING_INSIDE_ROOM = 0xC,
+		GAME_STATE_PLAYING = 0xD,
+		GAME_STATE_SHOPPING = 0xE
+	};
+	/*
+	* To store state of last previous game state for further actions
+	*/
+	extern int previousGameState;
+	void AllocateAndResizeConsole(int width, int height);
+	void ClearConsole();
+	void PrintCurrentFeatureStatesOnConsole(InGamePlaying _inGamePlaying);
 	int GetTargetModuleDllBase();
 	int GetGameState();
 	bool isGamePlaying();

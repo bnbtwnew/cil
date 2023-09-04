@@ -1,5 +1,7 @@
 #include "InGamePlaying.h"
 #include "GameUtils.h"
+#include "LicenseFeaturesStatus.h"
+#include "ThemidaSDK.h"
 
 using namespace GameUtils;
 
@@ -204,31 +206,61 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
         my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect _yourPlayerIndex is invalid\n");
         return;
     }
+    
+    if (licensedMovingEffectCode == LICENSED_MOVING_EFFECT_CODE) {
+        for (int index = 0; index <= 7; index++) {
+            int offset = index * 4;
+            int movingEffect = MOVING_EFFECT_MODE_NOTHING;
+            int plusEffect = 0;
+            if (index == _yourPlayerIndex) { // our player, toggle effect
+                movingEffect = _currentMode;
+                plusEffect = 0xC8; // this only work if moving effect is not MOVING_EFFECT_MODE_NOTHING
+            }
+            else { // other player
+                movingEffect = MOVING_EFFECT_MODE_NOTHING; // disable other players effect
+                plusEffect = 0;
+            }
 
-    for (int index = 0; index <= 7; index++) {
-        int offset = index * 4;
-        int movingEffect = MOVING_EFFECT_MODE_NOTHING;
-        int plusEffect = 0;
-        if (index == _yourPlayerIndex) { // our player, toggle effect
-            movingEffect = _currentMode;
-            plusEffect = 0xC8; // this only work if moving effect is not MOVING_EFFECT_MODE_NOTHING
+            *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458) = movingEffect;// selectedMoveEffectType;
+
+            // to set plus type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4)
+            *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = plusEffect;
         }
-        else { // other player
-            movingEffect = MOVING_EFFECT_MODE_NOTHING; // disable other players effect
-            plusEffect = 0;
-        }
-
-        *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458) = movingEffect;// selectedMoveEffectType;
-
-        // to set plus type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4)
-        *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = plusEffect;
-    }
+    }    
     
 }
 
 void InGamePlaying::SetYourPlayerIndex(int index) {
     _yourPlayerIndex = index;
     my_rog_debug1("InGamePlaying::SetYourPlayerIndex index = %d\n", index);
+}
+
+int InGamePlaying::GetYourPlayerIndex() {
+    return _yourPlayerIndex;
+}
+InGamePlaying::MOVING_EFFECT_MODE InGamePlaying::GetCurrentMovingEffectMode() {
+    return _currentMode;
+}
+
+std::string InGamePlaying::GetCurrentMovingEffectModeDisplayString() {
+    switch (_currentMode)
+    {
+    case InGamePlaying::MOVING_EFFECT_MODE_NOTHING:
+        return "Nothing";
+        break;
+    case InGamePlaying::MOVING_EFFECT_MODE_NORMAL:
+        return "Normal";
+        break;
+    case InGamePlaying::MOVING_EFFECT_MODE_FIVE_COLORS:
+        return "Five colors";
+        break;
+    case InGamePlaying::MOVING_EFFECT_MODE_BLACK_EFFECT:
+        return "Black effect";
+        break;
+    default:
+        return "Nothing";
+        break;
+    }
 }
 
 void InGamePlaying::TogglePlayerMovingEffectMode() {    

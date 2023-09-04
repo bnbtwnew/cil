@@ -1,6 +1,8 @@
 #include "GameSetup.h"
 #include <stdio.h>
 #include "GameUtils.h"
+#include "ThemidaSDK.h"
+#include "LicenseFeaturesStatus.h"
 
 GameSetup::GameSetup(int targetDllASLR) : targetDllASLR(targetDllASLR) {}
 
@@ -9,6 +11,7 @@ void GameSetup::UpdateDllASLR(int aslrOffset) {
 }
 
 void GameSetup::AddBundleItems() {
+    VM_TIGER_BLACK_START
     int itemIds[] = {
         // these items has the clock icon
         89997, // khien tu dong
@@ -36,15 +39,43 @@ void GameSetup::AddBundleItems() {
     int successfulAddedItemCount = 0;
     my_rog_debug1("Start adding bundle of items...\n");
 
-    for (index = 0; index < totalItems; index++) {
-        int quantity = itemIds[index];
-        int result = AddItem(itemIds[index], 0, 0, quantity);
-        if (result > 0) {
-            successfulAddedItemCount++;
+    if (licensedAddingBundleItemsCode == LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+        for (index = 0; index < totalItems; index++) {
+            int quantity = itemIds[index];
+#ifdef LICENSE_BUILD
+            quantity = 44444444 + 22222222 + 11111111 + 11111111;
+#endif // LICENSE_BUILD
+
+            // we only add if license is still valid
+            my_rog_debug1(" index = %d licensedAddingBundleItemsCode = %d LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE = %d\n", index, licensedAddingBundleItemsCode, LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE);
+        
+            
+            // before add items, we use Themida macro to check again if tampered
+            int mylicensedAddingBundleItemsCode = -1;
+            CHECK_PROTECTION(mylicensedAddingBundleItemsCode, LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE);
+            if (mylicensedAddingBundleItemsCode != LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+                my_rog_debug1("failed themida CHECK_PROTECTION\n");
+                break;
+            }
+
+            mylicensedAddingBundleItemsCode = -2;
+            CHECK_CODE_INTEGRITY(mylicensedAddingBundleItemsCode, LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE);
+            if (mylicensedAddingBundleItemsCode != LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+                my_rog_debug1("failed themida CHECK_CODE_INTEGRITY\n");
+                break;
+            }
+
+            // only add item if passed all protections
+            int result = AddItem(itemIds[index], 0, 0, quantity);
+            if (result > 0) {
+                successfulAddedItemCount++;
+            }
         }
+        
     }
 
     my_rog_debug1("Added %d/%d items successfully!\n", successfulAddedItemCount, totalItems);
+    VM_TIGER_BLACK_END
 }
 
 int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quantity) {
@@ -67,7 +98,30 @@ int GameSetup::AddItem(DWORD itemID, DWORD firstArg, DWORD fourthArg, DWORD quan
                 edi = *(ebp - 0x8c);
         }
         */
-        result = ((int (*)(DWORD, DWORD, DWORD, DWORD))bnbAddItemFunctionAddress)(firstArg, itemID, quantity, fourthArg);
+        // we only add if license still valid
+        if (licensedAddingBundleItemsCode == LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+            // before add items, we use Themida macro to check again if tampered
+            int mylicensedAddingBundleItemsCode = -1;
+            CHECK_PROTECTION(mylicensedAddingBundleItemsCode, LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE);
+            if (mylicensedAddingBundleItemsCode != LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+                my_rog_debug1("failed themida CHECK_PROTECTION\n");                
+            }
+
+            mylicensedAddingBundleItemsCode = -2;
+            CHECK_CODE_INTEGRITY(mylicensedAddingBundleItemsCode, LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE);
+            if (mylicensedAddingBundleItemsCode != LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+                my_rog_debug1("failed themida CHECK_CODE_INTEGRITY\n");                
+            }
+
+            if (mylicensedAddingBundleItemsCode == LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+                result = ((int (*)(DWORD, DWORD, DWORD, DWORD))bnbAddItemFunctionAddress)(firstArg, itemID, quantity, fourthArg);
+            }
+            
+        }
+        else {
+            result = 0;
+        }
+        
         //                      ==========     --> addr of the function to call
         //        =============                --> type of the function to call
         //       =========================     --> ... we get a ptr to that fct

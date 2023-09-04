@@ -139,14 +139,14 @@
       <SDLCheck>
       </SDLCheck>
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;LICENSE_BUILD;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson;$(SolutionDir)Themida/Include</AdditionalIncludeDirectories>
       <DebugInformationFormat />
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib;$(IntDir)curl/lib;$(SolutionDir)curl/lib;</AdditionalLibraryDirectories>
-      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)openssl/lib/libcrypto_static.lib;$(SolutionDir)openssl/lib/libssl_static.lib;</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories);$(IntDir)Detours/lib;$(IntDir)curl/lib;$(SolutionDir)curl/lib;$(SolutionDir)Themida/Lib/COFF</AdditionalLibraryDirectories>
+      <AdditionalDependencies>$(CoreLibraryDependencies);%(AdditionalDependencies);$(SolutionDir)openssl/lib/libcrypto_static.lib;$(SolutionDir)openssl/lib/libssl_static.lib;SecureEngineSDK32.lib;</AdditionalDependencies>
       <GenerateDebugInformation>false</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
@@ -293,6 +293,7 @@
     <ClCompile Include="HackModule.cpp" />
     <ClCompile Include="InGameItemCollector.cpp" />
     <ClCompile Include="InGamePlaying.cpp" />
+    <ClCompile Include="LicenseFeaturesStatus.cpp" />
     <ClCompile Include="MyEncryptor.cpp" />
     <ClCompile Include="MyLic.cpp" />
     <ClCompile Include="Utils.cpp" />
@@ -309,6 +310,7 @@
     <ClInclude Include="HackModule.h" />
     <ClInclude Include="InGameItemCollector.h" />
     <ClInclude Include="InGamePlaying.h" />
+    <ClInclude Include="LicenseFeaturesStatus.h" />
     <ClInclude Include="MyEncryptor.h" />
     <ClInclude Include="MyLic.h" />
     <ClInclude Include="NTPClient.h" />

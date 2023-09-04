@@ -8,14 +8,19 @@
 #include <Windows.h>
 #include <tchar.h>
 #include "exports.h"
-
+#include "MyLic.h"
+#include "LicenseFeaturesStatus.h"
 
 
 using namespace std;
 
-#ifndef LICENSE_BUILD
+#ifdef LICENSE_BUILD
+// need to add this here instead of using macro to prevent crashing when launch the app, dont know why :(
 void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...) {
-    //#ifndef LICENSE_BUILD
+    do {} while (0);
+}
+#else
+void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...) {
     int final_n, n = ((int)fmt_str.size()) * 2; /* Reserve two times as much as the length of the fmt_str */
     std::unique_ptr<char[]> formatted;
     va_list ap;
@@ -34,24 +39,93 @@ void my_rog_debug1_impl(const std::string& file, int line, const std::string& fu
     std::string log_message = "[" + file + ":" + std::to_string(line) + " (" + function + ")] " + std::string(formatted.get());
     cout << log_message << endl;
 
-     //std::string(formatted.get());
+    //std::string(formatted.get());
     std::ofstream logFile("my_log.txt", std::ios_base::app);
     logFile << log_message; //std::string(formatted.get());
     logFile.close();
-    //#endif // !LICENSE_BUILD
 }
 #endif // !LICENSE_BUILD
 
-namespace GameUtils {    
-    enum GameState {
-        GAME_STATE_NOT_LAUNCHED = 0,
-        GAME_STATE_LOGIN_SCREEN = 1,
-        GAME_STATE_LOGIN_LOADING = 0x17,
-        GAME_STATE_WAITING_AT_LOBBY = 0xB,
-        GAME_STATE_WAITING_INSIDE_ROOM = 0xC,
-        GAME_STATE_PLAYING = 0xD,
-        GAME_STATE_SHOPPING = 0xE
-    };
+namespace GameUtils {        
+    int previousGameState = 0;
+
+    void AllocateAndResizeConsole(int width, int height)
+    {
+        // Allocate a new console for this process
+        AllocConsole();
+
+        // Get a handle to the standard output console
+        HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+
+        if (consoleHandle != INVALID_HANDLE_VALUE)
+        {
+            // Define a COORD structure to set the console size
+            COORD consoleSize;
+            consoleSize.X = width;
+            consoleSize.Y = height;
+
+            // Set the console screen buffer size
+            SetConsoleScreenBufferSize(consoleHandle, consoleSize);
+
+            // Get the console window info
+            CONSOLE_SCREEN_BUFFER_INFO consoleInfo;
+            GetConsoleScreenBufferInfo(consoleHandle, &consoleInfo);
+
+            // Define a SMALL_RECT structure to set the console window size
+            SMALL_RECT consoleRect;
+            consoleRect.Left = 0;
+            consoleRect.Top = 0;
+            consoleRect.Right = width - 1;   // 0-based index
+            consoleRect.Bottom = height - 1; // 0-based index
+
+            // Set the console window size
+            SetConsoleWindowInfo(consoleHandle, TRUE, &consoleRect);
+
+            // Optionally, set the font size, color, or other console attributes as needed
+        }
+    }
+
+    void ClearConsole()
+    {
+        HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+        CONSOLE_SCREEN_BUFFER_INFO csbi;
+        COORD topLeft = { 0, 0 };
+        DWORD written;
+
+        GetConsoleScreenBufferInfo(consoleHandle, &csbi);
+        FillConsoleOutputCharacter(consoleHandle, ' ', csbi.dwSize.X * csbi.dwSize.Y, topLeft, &written);
+        FillConsoleOutputAttribute(consoleHandle, csbi.wAttributes, csbi.dwSize.X * csbi.dwSize.Y, topLeft, &written);
+        SetConsoleCursorPosition(consoleHandle, topLeft);
+    }
+
+    void PrintCurrentFeatureStatesOnConsole(InGamePlaying _inGamePlaying) {
+        ClearConsole();
+        int yourPlayerIndex = _inGamePlaying.GetYourPlayerIndex();
+        string playerIndexBase1Str = "";
+        if (yourPlayerIndex >= 0) {
+            playerIndexBase1Str = "Box " + std::to_string(yourPlayerIndex + 1);
+        }
+        else {
+            playerIndexBase1Str = "Not Set";
+        }
+        MyLic lic = MyLic();
+        string machineIdHashed = lic.GenerateMachineID();
+        string licenseStatus = "Activated";
+        if (licensedAddingBundleItemsCode != LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE) {
+            licenseStatus = "Expired";
+        }
+
+        cout << "==== LICENSE ====" << endl;
+        cout << "Info:   \t" << machineIdHashed << endl;
+        cout << "Status: \t" << licenseStatus << endl;
+
+        cout << endl;
+        cout << "==== SETTINGS ====" << endl;
+        cout << "|Feature            \t" << "|Shortcuts\t\t" << "|State" << endl;
+        cout << "[*] Add full shop  \t" << "Shift + 1 \t\t" << endl;
+        cout << "[*] Moving effect  \t" << "Shift + 2 \t\t" << _inGamePlaying.GetCurrentMovingEffectModeDisplayString() << endl;
+        cout << "[*] Player position\t" << "P + Number\t\t" << playerIndexBase1Str << endl;        
+    }
 
     int GetTargetModuleDllBase() {
         int dllBase = (int)GetModuleHandle(_T(TARGET_MODULE_DLL));

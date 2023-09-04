@@ -10,6 +10,8 @@
 #include "rapidjson/document.h" // RapidJSON for JSON parsing
 #include "MyEncryptor.h"
 #include "GameUtils.h"
+#include "LicenseFeaturesStatus.h"
+#include "ThemidaSDK.h"
 
 using namespace GameUtils;
 
@@ -26,6 +28,7 @@ public:
     }
 
     bool MyDecryptFile(const std::string fileContent) {
+        VM_TIGER_BLACK_START
         std::string decryptedFileContent;
         // Refer BnBTwBotKeyGen.cpp for logic of encryption
         string fileContentDecryptionKey = _keyHex.substr(32, 32);
@@ -136,14 +139,28 @@ public:
         // we want to do it hear instead of at caller side to prevent method hooking
 
         my_rog_debug1("Successfully decrytped!!\n");
-        return true;
+        // we set false here first and use Themida macro to check if dll is tampered
+        int passedProtectionCheckValue = -1;
+        // we set to true here if no tampered
+        CHECK_PROTECTION(passedProtectionCheckValue, 90400);
+
+        if (passedProtectionCheckValue != 90400) {
+            // tampered already, generate false
+            GenerateAddingBundleItemsLicensedCode((19000000 - 100 + 24 * 2 + 1 - 4 + 3 + 9 - 1 + 1 + 300 + 204 + 10) < 0);
+            return false;
+        }
+
+        // just funny statement to mess up with reverse engineer, we want it returns true here
+        bool result = (10000000 - 100 + 24 * 2 + 1 - 4 + 3 + 9 - 1 + 1 + 300 + 204 + 10) > 0;
+        VM_TIGER_BLACK_END
+        return result;
     }
 
     bool DownloadAndDecryptFile(const std::string& url) {
         // Download the file.
         std::string fileContent;
         if (!DownloadFile(url, fileContent)) {
-            std::cerr << "Failed to download the file." << std::endl;
+            my_rog_debug1("Failed to download the file.\n");
             return false;
         }
 
@@ -231,7 +248,7 @@ private:
         document.Parse(jsonContent.c_str());
 
         if (document.HasParseError()) {
-            std::cerr << "JSON parse error: " << document.GetParseError() << std::endl;
+            my_rog_debug1("JSON parse error: %s\n", document.GetParseError());
             return false;
         }
 
@@ -257,7 +274,7 @@ private:
         dateStream >> std::get_time(&timeInfo, "%d/%m/%Y");
 
         if (dateStream.fail()) {
-            std::cerr << "Failed to parse the date string." << std::endl;
+            my_rog_debug1("Failed to parse the date string.\n");
         }
 
         return timeInfo;
@@ -268,7 +285,7 @@ private:
         std::time_t timeValue = std::mktime(&timeInfo);
 
         if (timeValue == -1) {
-            std::cerr << "Conversion to std::time_t failed." << std::endl;
+            my_rog_debug1("Conversion to std::time_t failed.\n");
             return -1; // Error condition.
         }
 

@@ -12,6 +12,8 @@
 #include "MyLic.h"
 #include "NTPClient.h"
 
+#include <windows.h>
+
 #pragma comment(lib, "Detours/lib/detours.lib")
 //#pragma comment(lib, "detoured.lib")
 //#pragma comment(lib, "nmco3.lib")
@@ -25,6 +27,56 @@
 #pragma comment(lib, "curl/lib/zlib.lib")
 
 using namespace std;
+int (WINAPI* pMessageBox)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType) = MessageBox;
+int WINAPI MyMessageBox(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType)
+{
+    int ret = pMessageBox(hWnd, TEXT("injection success MyMessageBox\n"), lpCaption, uType);
+    return ret;
+}
+
+int (WINAPI* pMessageBoxEx)(
+    HWND hWnd,
+    LPCSTR lpText,
+    LPCSTR lpCaption,
+    UINT uType,
+    WORD wLanguageId) = MessageBoxEx;
+
+int WINAPI MyMessageBoxEx(HWND hWnd, LPCSTR lpText, LPCSTR lpCaption, UINT uType, WORD wLanguageId)
+{
+    int ret = pMessageBoxEx(hWnd, "injection success MyMessageBoxEx\n", lpCaption, uType, wLanguageId);
+    return ret;
+}
+
+
+//#pragma startup(HookedThemidaDemoAlert)
+
+void HookedThemidaDemoAlert() {  
+    MessageBox(NULL, "hahahaha", "Hahaha", MB_OK);
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)pMessageBox, MyMessageBox);
+    if (DetourTransactionCommit() == NO_ERROR) {
+        OutputDebugString(TEXT("MessageBox() detoured successfully"));
+        my_rog_debug1(TEXT("MessageBox() detoured successfully"));
+        return;
+    }
+    else {
+        my_rog_debug1(TEXT("MessageBox() detoured successfully failed!!!"));
+    }
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+    DetourAttach(&(PVOID&)pMessageBoxEx, MyMessageBoxEx);
+    if (DetourTransactionCommit() == NO_ERROR) {
+        OutputDebugString(TEXT("MessageBoxEx() detoured successfully"));
+        my_rog_debug1(TEXT("MessageBoxEx() detoured successfully"));
+        return;
+    }
+    else {
+        my_rog_debug1(TEXT("MessageBox() detoured successfully failed!!!"));
+    }
+}
 
 void DetoursExample();
 
@@ -61,15 +113,21 @@ DWORD WINAPI StaticInitialiseConsoleForDebugging(PVOID lpParameter) {
     return 0;
 }
 
-
 void HackModule::Initialize() {
-    DisableThreadLibraryCalls(hModule);
-    AllocConsole();
+    //HookedThemidaDemoAlert();
 
-    SetConsoleTitleW(L"NEW BNB Hack Experiment ^_^");
+    DisableThreadLibraryCalls(hModule);
+//#ifndef LICENSE_BUILD
+    //AllocConsole();
+    AllocateAndResizeConsole(200, 70);
+
+    SetConsoleTitleW(L"NEW BNB TW Hack");
     freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);
     freopen_s((FILE**)stderr, "CONOUT$", "w", stderr);
     freopen_s((FILE**)stdin, "CONIN$", "r", stdin);
+//#endif // LICENSE_BUILD
+
+    
 
     my_rog_debug1("New BNB TW Hack Experiement Loaded! \n");
 
@@ -107,6 +165,8 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
 
     DetoursExample();
 
+    PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
+
     while (true)
     {
 #ifndef LICENSE_BUILD
@@ -129,6 +189,7 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
         // Add bundle items
         if (GetAsyncKeyState(VK_LSHIFT) & GetAsyncKeyState(0x31) & 0x8000) { // Shift 1            
             _gameSetup.AddBundleItems();
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
 
         // toggle player moving effect
@@ -139,33 +200,42 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
             if (_shiftF2KeyReleased) {
                 _inGamePlaying.TogglePlayerMovingEffectMode();
                 _shiftF2KeyReleased = false;
+                PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
             }
         }
 
         // Set current player index in the waiting room
         if (GetAsyncKeyState('P') & GetAsyncKeyState(0x31) & 0x8000) { // P 1
             _inGamePlaying.SetYourPlayerIndex(0);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x32) & 0x8000) { // P 2
             _inGamePlaying.SetYourPlayerIndex(1);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x33) & 0x8000) { // P 3
             _inGamePlaying.SetYourPlayerIndex(2);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x34) & 0x8000) { // P 4
             _inGamePlaying.SetYourPlayerIndex(3);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x35) & 0x8000) { // P 5
             _inGamePlaying.SetYourPlayerIndex(4);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x36) & 0x8000) { // P 6
             _inGamePlaying.SetYourPlayerIndex(5);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x37) & 0x8000) { // P 7
             _inGamePlaying.SetYourPlayerIndex(6);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
         else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x38) & 0x8000) { // P 8
             _inGamePlaying.SetYourPlayerIndex(7);
+            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
         }
 #endif // LICENSE_BUILD
 
@@ -401,14 +471,27 @@ VOID DetoursExample() {
     
 }
 
+/*
+This watch dog thread keep alive and be always called every 1 second
+*/
 DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
     Sleep(3000);
     my_rog_debug1("HackModule::InitialiseWatchdogTimerThread... \n");
     while (true)
     {
+        // check current game state
+        int currentGameState = GetGameState();
+        // only update effect once time after game start, otherwise after game playing it will crash the app :(
+        if (currentGameState != previousGameState) { // game state changed
+            if (isGamePlaying()) {
 #ifdef LICENSE_BUILD
-        _inGamePlaying.UpdateMovingEffectAndPlusEffect();
+                _inGamePlaying.UpdateMovingEffectAndPlusEffect();
 #endif // LICENSE_BUILD
+            }
+            previousGameState = currentGameState;
+        }
+
+
 
         Sleep(1000);
     }

@@ -1,0 +1,23 @@
+#pragma once
+
+#ifndef LICENSED_ADDING_BUNDLE_PART_1
+#define LICENSED_ADDING_BUNDLE_PART_1 1000
+#endif // !LICENSED_ADDING_BUNDLE_PART_1
+
+#ifndef LICENSED_ADDING_BUNDLE_PART_2
+#define LICENSED_ADDING_BUNDLE_PART_2 2000
+#endif // !LICENSED_ADDING_BUNDLE_PART_2
+
+#ifndef LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE
+#define LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE 2000001
+#endif // !LICENSED_ADDING_BUNDLE_ITEMS_VALID_CODE
+
+#ifndef LICENSED_MOVING_EFFECT_CODE
+#define LICENSED_MOVING_EFFECT_CODE 3000001
+#endif // !LICENSED_MOVING_EFFECT_CODE
+
+extern int licensedAddingBundleItemsCode;
+extern int licensedMovingEffectCode;
+
+void GenerateAddingBundleItemsLicensedCode(bool licensed);
+void GenerateMovingEffectCode(bool licensed);
