@@ -49,6 +49,27 @@ void my_rog_debug1_impl(const std::string& file, int line, const std::string& fu
 namespace GameUtils {        
     int previousGameState = 0;
 
+    void GetLastErrorHumanReadable() {
+        DWORD dwError = GetLastError();
+        LPVOID errorMessage;
+
+        FormatMessage(
+            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
+            NULL,
+            dwError,
+            0, // Default language
+            (LPSTR)&errorMessage,
+            0,
+            NULL
+        );
+
+        // Print or log the error message
+        my_rog_debug1("GetLastError Error %lu: %s\n", dwError, errorMessage);
+
+        // Free the buffer allocated by FormatMessage
+        LocalFree(errorMessage);
+    }
+
     void AllocateAndResizeConsole(int width, int height)
     {
         // Allocate a new console for this process

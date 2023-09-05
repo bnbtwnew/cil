@@ -7,6 +7,7 @@
 #include <fstream>
 #include <string.h>
 #include "GameNotificationService.h"
+#include "DetoursHooking.h"
 
 #include "Detours/include/detours.h"
 #include "MyLic.h"
@@ -146,8 +147,8 @@ void HackModule::Initialize() {
     
     CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseKeyShortcuts), this, NULL, NULL);
     
-    MyLic lic = MyLic();
-    lic.PersistMachinceIdToFile();
+    /*MyLic lic = MyLic();
+    lic.PersistMachinceIdToFile();*/
     CreateThread(NULL, NULL, reinterpret_cast<LPTHREAD_START_ROUTINE>(StaticInitialiseCheckLicense), this, NULL, NULL);
 }
 
@@ -353,6 +354,8 @@ VOID DetoursExample() {
 
     dAddItem = (int (*)(DWORD, DWORD, DWORD, DWORD))0x79275a;
 
+    DetoursHooking::HookedDetectedHacking07();
+
     //dluaL_LoadBuffer = (int (*)(int*, const char*, size_t, const char*))0xAD8750;
     // dxrefs_5_sub_44D4BE_CItemSkillInfo_IsUserItemSkill = (char(*)(int, int, int*))0x0044D4BE;
 
@@ -468,6 +471,7 @@ DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
         // actually we can use this secondsCounter as this loop will trigger every second, 
         // we dont need extra counter
         if (secondsCounter > 0 && secondsCounter % 3600 == 0) { // check every 1 hour
+            my_rog_debug1("======> Recheck license after 1 hour...\n");
             MyLic lic = MyLic();
             lic.CheckLicense();
             secondsCounter = 0;

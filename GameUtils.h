@@ -53,6 +53,7 @@ namespace GameUtils {
 	* To store state of last previous game state for further actions
 	*/
 	extern int previousGameState;
+	void GetLastErrorHumanReadable();
 	void AllocateAndResizeConsole(int width, int height);
 	void ClearConsole();
 	void PrintCurrentFeatureStatesOnConsole(InGamePlaying _inGamePlaying);

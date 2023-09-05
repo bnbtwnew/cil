@@ -32,6 +32,7 @@ public:
         std::string decryptedFileContent;
         // Refer BnBTwBotKeyGen.cpp for logic of encryption
         string fileContentDecryptionKey = _keyHex.substr(32, 32);
+        my_rog_debug1("MyDecryptFile encrypted file content: %s key: %s\n", fileContent, fileContentDecryptionKey);
         if (!MyEncryptor::DecryptAES(fileContent, decryptedFileContent, fileContentDecryptionKey)) {
             my_rog_debug1("Failed to decrypt file the content.\n");
             return false;

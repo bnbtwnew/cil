@@ -285,6 +285,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DetoursHooking.cpp" />
     <ClCompile Include="DLLMain.cpp" />
     <ClCompile Include="DLLMainEntry.cpp" />
     <ClCompile Include="GameNotificationService.cpp" />
@@ -300,6 +301,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CommonCRT.h" />
+    <ClInclude Include="DetoursHooking.h" />
     <ClInclude Include="DLLMain.h" />
     <ClInclude Include="DLLMainEntry.h" />
     <ClInclude Include="exports.h" />

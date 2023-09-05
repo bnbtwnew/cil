@@ -217,27 +217,28 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
         return;
     }
     
-    if (licensedMovingEffectCode == LICENSED_MOVING_EFFECT_CODE) {
-        for (int index = 0; index <= 7; index++) {
-            int offset = index * 4;
-            int movingEffect = MOVING_EFFECT_MODE_NOTHING;
-            int plusEffect = 0;
-            if (index == yourCurrentPlayerIndex) { // our player, toggle effect
-                movingEffect = _currentMode;
-                plusEffect = 0xC8; // this only work if moving effect is not MOVING_EFFECT_MODE_NOTHING
-                my_rog_debug1("Update yyour player at %d to movingEffect %d plusEffect %x\n", yourCurrentPlayerIndex, movingEffect, plusEffect);
-            }
-            else { // other player
-                movingEffect = MOVING_EFFECT_MODE_NOTHING; // disable other players effect
-                plusEffect = 0;
-            }
+    // let commented out this first as app get BlackCipher2_Error02 frequently
+    //if (licensedMovingEffectCode == LICENSED_MOVING_EFFECT_CODE) {
+    //    for (int index = 0; index <= 7; index++) {
+    //        int offset = index * 4;
+    //        int movingEffect = MOVING_EFFECT_MODE_NOTHING;
+    //        int plusEffect = 0;
+    //        if (index == yourCurrentPlayerIndex) { // our player, toggle effect
+    //            movingEffect = _currentMode;
+    //            plusEffect = 0xC8; // this only work if moving effect is not MOVING_EFFECT_MODE_NOTHING
+    //            my_rog_debug1("Update yyour player at %d to movingEffect %d plusEffect %x\n", yourCurrentPlayerIndex, movingEffect, plusEffect);
+    //        }
+    //        //else { // other player
+    //        //    movingEffect = MOVING_EFFECT_MODE_NOTHING; // disable other players effect
+    //        //    plusEffect = 0;
+    //        //}
 
-            *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458) = movingEffect;// selectedMoveEffectType;
+    //        *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458) = movingEffect;// selectedMoveEffectType;
 
-            // to set plus type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4)
-            *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = plusEffect;
-        }
-    }    
+    //        // to set plus type effect: *(*(ebx + *(*(*0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4)
+    //        *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = plusEffect;
+    //    }
+    //}    
     
 }
 
