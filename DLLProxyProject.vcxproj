@@ -141,6 +141,7 @@
       <PreprocessorDefinitions>_WINDLL;%(PreprocessorDefinitions);CURL_STATICLIB;_CRT_SECURE_NO_WARNINGS;LICENSE_BUILD;</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);C:\Program Files (x86)\OpenSSL-Win32\include;$(SolutionDir)curl/include;$(SolutionDir)rapidjson;$(SolutionDir)Themida/Include</AdditionalIncludeDirectories>
       <DebugInformationFormat />
+      <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

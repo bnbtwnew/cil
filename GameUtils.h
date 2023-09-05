@@ -15,9 +15,9 @@
 
 #ifdef LICENSE_BUILD
 // Define log_debug as an empty macro in release builds
-void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...);
-#define my_rog_debug1(fmt_str, ...) my_rog_debug1_impl(__FILE__, __LINE__, __FUNCTION__, fmt_str, ##__VA_ARGS__)
-//#define my_rog_debug1(fmt_str, ...) do {} while (0)
+//void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...);
+//#define my_rog_debug1(fmt_str, ...) my_rog_debug1_impl("", 0, "", fmt_str, ##__VA_ARGS__)
+#define my_rog_debug1(fmt_str, ...) do {} while (0)
 #else
 void my_rog_debug1_impl(const std::string & file, int line, const std::string & function, const std::string fmt_str, ...);
 #define my_rog_debug1(fmt_str, ...) my_rog_debug1_impl(__FILE__, __LINE__, __FUNCTION__, fmt_str, ##__VA_ARGS__)

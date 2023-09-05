@@ -17,7 +17,7 @@ using namespace std;
 #ifdef LICENSE_BUILD
 // need to add this here instead of using macro to prevent crashing when launch the app, dont know why :(
 void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...) {
-    do {} while (0);
+    
 }
 #else
 void my_rog_debug1_impl(const std::string& file, int line, const std::string& function, const std::string fmt_str, ...) {
@@ -147,7 +147,7 @@ namespace GameUtils {
         cout << "==== SETTINGS ====" << endl;
         cout << "|Feature            \t" << "|Shortcuts\t\t" << "|State" << endl;
         cout << "[*] Add full shop  \t" << "Shift + 1 \t\t" << endl;
-        cout << "[*] Moving effect  \t" << "Shift + 2 \t\t" << _inGamePlaying.GetCurrentMovingEffectModeDisplayString() << endl;
+        //cout << "[*] Moving effect  \t" << "Shift + 2 \t\t" << _inGamePlaying.GetCurrentMovingEffectModeDisplayString() << endl;
         //cout << "[*] Player position\t" << "P + Number\t\t" << playerIndexBase1Str << endl;        
     }
 
