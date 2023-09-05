@@ -99,8 +99,11 @@ namespace GameUtils {
     }
 
     void PrintCurrentFeatureStatesOnConsole(InGamePlaying _inGamePlaying) {
+        
         ClearConsole();
+        //my_rog_debug1("PrintCurrentFeatureStatesOnConsole\n");        
         int yourPlayerIndex = _inGamePlaying.GetYourPlayerIndex();
+        //my_rog_debug1("PrintCurrentFeatureStatesOnConsole yourPlayerIndex = %d\n", yourPlayerIndex);
         string playerIndexBase1Str = "";
         if (yourPlayerIndex >= 0) {
             playerIndexBase1Str = "Box " + std::to_string(yourPlayerIndex + 1);
@@ -124,7 +127,7 @@ namespace GameUtils {
         cout << "|Feature            \t" << "|Shortcuts\t\t" << "|State" << endl;
         cout << "[*] Add full shop  \t" << "Shift + 1 \t\t" << endl;
         cout << "[*] Moving effect  \t" << "Shift + 2 \t\t" << _inGamePlaying.GetCurrentMovingEffectModeDisplayString() << endl;
-        cout << "[*] Player position\t" << "P + Number\t\t" << playerIndexBase1Str << endl;        
+        //cout << "[*] Player position\t" << "P + Number\t\t" << playerIndexBase1Str << endl;        
     }
 
     int GetTargetModuleDllBase() {
@@ -446,6 +449,31 @@ namespace GameUtils {
         };
 
         return result;
+    }
+
+    /*
+    This method will retrieve your player position index (based zero) when you join a room
+    This function return -1 if your player has not joined any room yet!
+    */
+    int GetYourPlayerPositionWhenJoinGame() {        
+        int returnValueOfFunctionPointer_0x9CEF3F = 0;
+        int* FF95B8 = (int*)0xFF95B8; // this is the value passing from callers, for example: .text:004876CC                 mov     ecx, CFxContext_CObject_dword_FF95B8
+                                
+        int FF95B8_value = *FF95B8;
+        if (FF95B8_value == 0) {
+            my_rog_debug1("ptr is null!!!!\n");
+            return -1;
+        }
+        
+        int eaxFunctionPointer = 0x9CEF3F;
+        __asm {
+            mov ecx, FF95B8_value
+            push 0
+            call eaxFunctionPointer
+            mov returnValueOfFunctionPointer_0x9CEF3F, eax
+        }
+
+        return returnValueOfFunctionPointer_0x9CEF3F;
     }
 
     std::string string_format(const std::string fmt_str, ...) {

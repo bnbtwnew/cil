@@ -12,13 +12,10 @@ public:
 	};
 	void TogglePlayerMovingEffectMode();
 	void UpdateMovingEffectAndPlusEffect();
-	void SetYourPlayerIndex(int index);
 	int GetYourPlayerIndex();
 	MOVING_EFFECT_MODE GetCurrentMovingEffectMode();
 	std::string GetCurrentMovingEffectModeDisplayString();
 private:
 	MOVING_EFFECT_MODE _currentMode = MOVING_EFFECT_MODE_BLACK_EFFECT;
-	//int _playerIndex = 0;
-	int _yourPlayerIndex = -1;
 };
 

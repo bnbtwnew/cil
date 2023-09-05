@@ -107,6 +107,8 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
             ret        0x4
             */
 
+    
+
     int selectedMoveEffectType = _currentMode;
 
     if (!GameUtils::isGamePlaying()) {
@@ -114,11 +116,13 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
         return;
     }
 
+    int debug_call_eaxFunctionPointer_0x009CEF3F = 0;
+    int eaxFunctionPointer = 0x9CEF3F;
     int ecxValue = *(int*)0xFF95B8; //*(int*)(*(int*)(*(int*)0xFF9734 + 6750) + 0x1DF02C) + 74;
-    int eaxFunctionPointer = 0x009CEF3F;
+
     int FF9734_Value = *(int*)0xFF9734;
 
-    int debug_call_eaxFunctionPointer_0x009CEF3F = 0;
+
     int debug_ebx_value = 0;
     int debug_eax_ptr_value_of_eax_plus_0x6750 = 0;
     int debug_eax_ptr_value_of_eax_plus_0x10 = 0;
@@ -126,7 +130,11 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     int debug_ecx_ptr_value_after_plus_0x2458 = 0;
     int debug_ecx_ptr_value_after_plus_4 = 0;
 
-    my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect ecxValue: %x\n", ecxValue);
+
+
+
+
+    //my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect ecxValue: %x\n", ecxValue);
 
     //__asm {
     //    ; now we port logic of sub_00896CA0
@@ -202,8 +210,10 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     //    *(int*)(*(int*)(offset + *(int*)(*(int*)(*(int*)0xFF9734 + 0x6750) + 0x10)) + 0x2458 + 0x4) = 0xC8;
     //}
 
-    if (_yourPlayerIndex < 0 || _yourPlayerIndex > 16) {
-        my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect _yourPlayerIndex is invalid\n");
+    int yourCurrentPlayerIndex = GetYourPlayerIndex();
+    my_rog_debug1("yourCurrentPlayerIndex = %d\n", yourCurrentPlayerIndex);
+    if (yourCurrentPlayerIndex < 0 || yourCurrentPlayerIndex >= 8) {
+        my_rog_debug1("InGamePlaying::UpdateMovingEffectAndPlusEffect yourCurrentPlayerIndex is invalid yourCurrentPlayerIndex = %d\n", yourCurrentPlayerIndex);
         return;
     }
     
@@ -212,9 +222,10 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
             int offset = index * 4;
             int movingEffect = MOVING_EFFECT_MODE_NOTHING;
             int plusEffect = 0;
-            if (index == _yourPlayerIndex) { // our player, toggle effect
+            if (index == yourCurrentPlayerIndex) { // our player, toggle effect
                 movingEffect = _currentMode;
                 plusEffect = 0xC8; // this only work if moving effect is not MOVING_EFFECT_MODE_NOTHING
+                my_rog_debug1("Update yyour player at %d to movingEffect %d plusEffect %x\n", yourCurrentPlayerIndex, movingEffect, plusEffect);
             }
             else { // other player
                 movingEffect = MOVING_EFFECT_MODE_NOTHING; // disable other players effect
@@ -230,13 +241,8 @@ void InGamePlaying::UpdateMovingEffectAndPlusEffect() {
     
 }
 
-void InGamePlaying::SetYourPlayerIndex(int index) {
-    _yourPlayerIndex = index;
-    my_rog_debug1("InGamePlaying::SetYourPlayerIndex index = %d\n", index);
-}
-
 int InGamePlaying::GetYourPlayerIndex() {
-    return _yourPlayerIndex;
+    return GetYourPlayerPositionWhenJoinGame();
 }
 InGamePlaying::MOVING_EFFECT_MODE InGamePlaying::GetCurrentMovingEffectMode() {
     return _currentMode;

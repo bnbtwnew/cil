@@ -13,6 +13,7 @@
 #include "NTPClient.h"
 
 #include <windows.h>
+#include <chrono>
 
 #pragma comment(lib, "Detours/lib/detours.lib")
 //#pragma comment(lib, "detoured.lib")
@@ -203,43 +204,7 @@ DWORD WINAPI HackModule::InitialiseKeyShortcuts() {
                 _shiftF2KeyReleased = false;
                 PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
             }
-        }
-
-        // Set current player index in the waiting room
-        if (GetAsyncKeyState('P') & GetAsyncKeyState(0x31) & 0x8000) { // P 1
-            _inGamePlaying.SetYourPlayerIndex(0);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x32) & 0x8000) { // P 2
-            _inGamePlaying.SetYourPlayerIndex(1);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x33) & 0x8000) { // P 3
-            _inGamePlaying.SetYourPlayerIndex(2);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x34) & 0x8000) { // P 4
-            _inGamePlaying.SetYourPlayerIndex(3);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x35) & 0x8000) { // P 5
-            _inGamePlaying.SetYourPlayerIndex(4);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x36) & 0x8000) { // P 6
-            _inGamePlaying.SetYourPlayerIndex(5);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x37) & 0x8000) { // P 7
-            _inGamePlaying.SetYourPlayerIndex(6);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-        else if (GetAsyncKeyState('P') & GetAsyncKeyState(0x38) & 0x8000) { // P 8
-            _inGamePlaying.SetYourPlayerIndex(7);
-            PrintCurrentFeatureStatesOnConsole(_inGamePlaying);
-        }
-
-        
+        }                
         
         if (GetAsyncKeyState(VK_LCONTROL) & GetAsyncKeyState('A') & 0x8000) { // Left Ctrl A
             //ToggleOnOffCheckbox(CHECKBOX_THAU_KINH);
@@ -477,12 +442,15 @@ This watch dog thread keep alive and be always called every 1 second
 DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
     Sleep(3000);
     my_rog_debug1("HackModule::InitialiseWatchdogTimerThread... \n");
+    std::chrono::steady_clock::time_point _lastCheckedLicenseTimePoint = std::chrono::steady_clock::now();
+    int secondsCounter = 0;
+    
     while (true)
     {
         // check current game state
         int currentGameState = GetGameState();
         // only update effect once time after game start, otherwise after game playing it will crash the app :(
-        if (currentGameState != previousGameState) { // game state changed
+        if (currentGameState != previousGameState) { // game state changed                                    
             if (isGamePlaying()) {
 #ifdef LICENSE_BUILD
                 _inGamePlaying.UpdateMovingEffectAndPlusEffect();
@@ -493,7 +461,20 @@ DWORD WINAPI HackModule::InitialiseWatchdogTimerThread() {
 
         //_itemCollector.CheckFastTurtles();
 
+        // check if license expired (just in case they keep the game running never restart for days)
+        std::chrono::steady_clock::time_point currentTimepoint = std::chrono::steady_clock::now();
+        long long secondsElapsedSinceLastLicenseChecked = (std::chrono::duration_cast<std::chrono::microseconds>(currentTimepoint - _lastCheckedLicenseTimePoint).count()) / 1000000;
+
+        // actually we can use this secondsCounter as this loop will trigger every second, 
+        // we dont need extra counter
+        if (secondsCounter > 0 && secondsCounter % 3600 == 0) { // check every 1 hour
+            MyLic lic = MyLic();
+            lic.CheckLicense();
+            secondsCounter = 0;
+        }
+
         Sleep(1000);
+        secondsCounter++;
     }
 }
 

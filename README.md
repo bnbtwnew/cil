@@ -191,6 +191,13 @@ int __thiscall sub_6765E5(_DWORD *this)
 	- CGridMan::GetSafeDangerGridNum
 		- // #STR: "%s grid %s Get Bomb", "%s grid %s no bomb", "CGridMan::GetSafeDangerGridNum"
 	- Detours CBlackCipher2Client::PushData() method and flushData method to no execute at all (using cove cave technique) to see if still got BlackCipher2_Error01/02 error when attaching with frida
+	- Check these suspicious string
+		- DetectedHacking02
+		- DetectedHacking07
+			- Got this error popup while playing game and it pop out to lobby screen, not login screens
+			- Check reference it's using in sub_7F834A, in this function it calls sub_9D0901(dword_FF95B8) multiple times and check the result integer with 14, 17, 19, 33, if not match then it will call xrefs_5359_sub_44F0F1 to check if result > 2000 then hack detected, it seems sub_44F0F1 is the wrapper to call Lua APIs
+			- sub_9D0901 is just getter method to get this[141] = [this + 234h] = [*FF95B8 + 234h]
+			- We also know that dword_FF95B8 is global pointer that we used to modify player moving effect  (it's pointing CFxContext vftable)
 
 - BNBBotTW version
 	- it create new random folder name at C:\ disk (C:\17a065b64ca0b2f557bfe2e9e4919419), inside will have .exe file and hook.dll file

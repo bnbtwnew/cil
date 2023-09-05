@@ -39,8 +39,8 @@ string MyLic::CheckLicense() {
     }
     else {
         my_rog_debug1("check lic result: %d\n", result);
-        GenerateAddingBundleItemsLicensedCode((1000 + 1 - 335 + 4) < 900990);
-        GenerateMovingEffectCode((2000 + 2 - 235 + 9) < 990990);
+        GenerateAddingBundleItemsLicensedCode(result);
+        GenerateMovingEffectCode(result);
     }
     
     VM_TIGER_BLACK_END
